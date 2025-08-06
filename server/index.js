@@ -30,8 +30,8 @@ app.set('trust proxy', 1);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [
-        'https://your-frontend-domain.vercel.app', // Add your frontend URL here
-        'https://your-frontend-domain.netlify.app',
+        'https://your-actual-vercel-app.vercel.app', // Replace with your actual Vercel URL
+        'https://your-actual-netlify-app.netlify.app', // Or your actual Netlify URL
         'http://localhost:3000' // For local development
       ]
     : ['http://localhost:3000'],
