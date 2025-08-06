@@ -10,7 +10,7 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY, // Make sure this is service role, not anon key
+  process.env.SUPABASE_SERVICE_ROLE_KEY, // This should bypass RLS
   {
     auth: {
       autoRefreshToken: false,
@@ -20,5 +20,6 @@ const supabase = createClient(
 );
 
 console.log('Supabase client created successfully');
+console.log('Using service role - RLS should be bypassed');
 
 module.exports = { supabase };
