@@ -7,6 +7,8 @@ import AssignRequestModal from './AssignRequestModal';
 import ManagerReviewModal from './ManagerReviewModal';
 import ClientReviewModal from './ClientReviewModal';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const Requests = () => {
   const { user, isClient, isManager, isEditor } = useAuth();
   const [requests, setRequests] = useState([]);
@@ -31,7 +33,7 @@ const Requests = () => {
 
   const fetchRequests = async () => {
     try {
-      const response = await axios.get('/api/requests/my-requests');
+      const response = await axios.get(`${API_BASE_URL}/api/requests/my-requests`);
       setRequests(response.data.requests);
     } catch (error) {
       console.error('Error fetching requests:', error);
@@ -53,9 +55,10 @@ const Requests = () => {
         formDataToSend.append('image', selectedFile);
       }
 
-      await axios.post('/api/requests', formDataToSend, {
+      await axios.post(`${API_BASE_URL}/api/requests`, formDataToSend, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       

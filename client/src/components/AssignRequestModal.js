@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
   const [editors, setEditors] = useState([]);
   const [selectedEditor, setSelectedEditor] = useState('');
@@ -15,7 +17,7 @@ const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
 
   const fetchEditors = async () => {
     try {
-      const response = await fetch('/api/requests/editors', {
+      const response = await fetch(`${API_BASE_URL}/api/requests/editors`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -43,7 +45,7 @@ const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/requests/${request.id}/assign`, {
+      const response = await fetch(`${API_BASE_URL}/api/requests/${request.id}/assign`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Send, Clock, AlertCircle, CheckCircle, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const Tasks = () => {
   const { user, isEditor } = useAuth();
   const [tasks, setTasks] = useState([]);
@@ -23,7 +25,7 @@ const Tasks = () => {
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch('/api/requests/my-tasks', {
+      const response = await fetch(`${API_BASE_URL}/api/requests/my-tasks`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -54,7 +56,7 @@ const Tasks = () => {
         formDataToSend.append('completed_work', selectedFile);
       }
 
-      const response = await fetch(`/api/requests/${selectedTask.id}/submit`, {
+      const response = await fetch(`${API_BASE_URL}/api/requests/${selectedTask.id}/submit`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

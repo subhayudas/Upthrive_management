@@ -4,6 +4,10 @@ import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
+// Set the base URL for axios
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+axios.defaults.baseURL = API_BASE_URL;
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -56,6 +60,7 @@ export const AuthProvider = ({ children }) => {
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
       const message = error.response?.data?.error || 'Login failed';
       toast.error(message);
       return { success: false, error: message };
@@ -113,4 +118,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-}; 
+};

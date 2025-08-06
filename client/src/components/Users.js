@@ -3,6 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { Trash2, UserPlus, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+// For components using fetch instead of axios
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const Users = () => {
   const { user, isManager } = useAuth();
   const [users, setUsers] = useState([]);
@@ -24,7 +27,7 @@ const Users = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/users', {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -46,7 +49,7 @@ const Users = () => {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch('/api/clients', {
+      const response = await fetch(`${API_BASE_URL}/api/clients`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

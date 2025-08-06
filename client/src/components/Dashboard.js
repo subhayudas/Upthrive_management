@@ -12,6 +12,11 @@ import {
   XCircle
 } from 'lucide-react';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// Set axios base URL
+axios.defaults.baseURL = API_BASE_URL;
+
 const Dashboard = () => {
   const { user, isManager, isEditor, isClient } = useAuth();
   const [stats, setStats] = useState({
@@ -264,4 +269,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Check, XCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
   const [action, setAction] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -17,7 +19,7 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/requests/${request.id}/client-review`, {
+      const response = await fetch(`${API_BASE_URL}/api/requests/${request.id}/client-review`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

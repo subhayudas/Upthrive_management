@@ -30,8 +30,7 @@ app.set('trust proxy', 1);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [
-        'https://your-actual-vercel-app.vercel.app', // Replace with your actual Vercel URL
-        'https://your-actual-netlify-app.netlify.app', // Or your actual Netlify URL
+        'https://upthrive-management.vercel.app/', // Replace with your REAL Vercel URL
         'http://localhost:3000' // For local development
       ]
     : ['http://localhost:3000'],
