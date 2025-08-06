@@ -1,0 +1,6 @@
+# Frontend files - not needed for backend deployment
+client/
+*.md
+.git/
+.gitignore
+database/

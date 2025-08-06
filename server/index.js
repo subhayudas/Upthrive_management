@@ -23,13 +23,17 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Trust proxy for rate limiting
+// Trust proxy for Railway
 app.set('trust proxy', 1);
 
-// CORS configuration
+// CORS configuration - Updated for production
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com'] 
+    ? [
+        'https://your-frontend-domain.vercel.app', // Add your frontend URL here
+        'https://your-frontend-domain.netlify.app',
+        'http://localhost:3000' // For local development
+      ]
     : ['http://localhost:3000'],
   credentials: true
 }));
@@ -50,7 +54,12 @@ app.use('/api/tasks', taskRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+  res.json({ 
+    status: 'OK', 
+    message: 'Social Media Agency API is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Error handling middleware
@@ -67,7 +76,8 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
-}); 
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+});
