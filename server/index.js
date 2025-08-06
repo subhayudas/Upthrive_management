@@ -26,12 +26,12 @@ app.use(limiter);
 // Trust proxy for Railway
 app.set('trust proxy', 1);
 
-// CORS configuration - Updated for production
+// CORS configuration - Remove trailing slash
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [
-        'https://upthrive-management.vercel.app/', // Replace with your REAL Vercel URL
-        'http://localhost:3000' // For local development
+        'https://upthrive-management.vercel.app', // Remove the trailing /
+        'http://localhost:3000'
       ]
     : ['http://localhost:3000'],
   credentials: true
