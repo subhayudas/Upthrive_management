@@ -7,6 +7,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const ccListRoutes = require('./routes/ccList');
+const clientRoutes = require('./routes/clients'); // ADD THIS LINE
 const requestRoutes = require('./routes/requests');
 const taskRoutes = require('./routes/tasks');
 
@@ -44,7 +45,8 @@ app.use('/uploads', express.static('uploads'));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/cc-list', ccListRoutes);
+app.use('/api/cclist', ccListRoutes); // CHANGE FROM /api/cc-list TO /api/cclist
+app.use('/api/clients', clientRoutes); // ADD THIS LINE
 app.use('/api/requests', requestRoutes);
 app.use('/api/tasks', taskRoutes);
 
@@ -70,4 +72,4 @@ app.use('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
-}); 
+});

@@ -16,7 +16,7 @@ import {
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout, isManager, isEditor, isClient } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -25,11 +25,16 @@ const Layout = ({ children }) => {
     navigate('/login');
   };
 
+  const isEditor = user?.role === 'editor';
+  const isManager = user?.role === 'manager';
+  const isClient = user?.role === 'client';
+
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
-    ...(isManager || isEditor ? [{ name: 'CC Lists', href: '/cc-list', icon: FileText }] : []),
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Content Calendar', href: '/cc-list', icon: FileText },
+    ...(isManager || isEditor ? [{ name: 'Clients', href: '/clients', icon: Users }] : []),
     { name: 'Requests', href: '/requests', icon: MessageSquare },
-    { name: 'Tasks', href: '/tasks', icon: CheckSquare },
+    ...(isEditor ? [{ name: 'Tasks', href: '/tasks', icon: CheckSquare }] : []),
     ...(isManager ? [{ name: 'Users', href: '/users', icon: Users }] : []),
   ];
 
@@ -147,4 +152,4 @@ const Layout = ({ children }) => {
   );
 };
 
-export default Layout; 
+export default Layout;

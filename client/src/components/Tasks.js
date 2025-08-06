@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Send, Clock, AlertCircle, CheckCircle, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Navigate } from 'react-router-dom';
 
 const Tasks = () => {
   const { user, isEditor } = useAuth();
@@ -107,14 +108,8 @@ const Tasks = () => {
     );
   };
 
-  if (!isEditor) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-600">Access denied. This page is only available to editors.</p>
-        </div>
-      </div>
-    );
+  if (user?.role !== 'editor') {
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (loading) {

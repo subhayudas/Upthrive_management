@@ -1,12 +1,24 @@
 const express = require('express');
-const { supabase, supabaseAdmin } = require('../config/supabase');
+const { supabase } = require('../config/supabase'); // Only import supabase
 const { authenticateUser } = require('../middleware/auth');
 const router = express.Router();
+
+// Debugging information
+console.log('=== Auth Route Debug ===');
+console.log('Supabase imported:', !!supabase);
+console.log('Supabase auth:', !!supabase?.auth);
+console.log('========================');
 
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, role, name, clientId } = req.body;
+    console.log('About to call supabase.auth, supabase is:', supabase);
+    
+    if (!supabase || !supabase.auth) {
+      return res.status(500).json({ error: 'Supabase client not initialized' });
+    }
+    
+    const { email, password, role, name, company_name } = req.body;
 
     // Validate required fields
     if (!email || !password || !role || !name) {
@@ -19,8 +31,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Invalid role' });
     }
 
-    // Create user in Supabase Auth
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    // Create user in Supabase Auth - USE SINGLE CLIENT
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true
@@ -30,11 +42,11 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: authError.message });
     }
 
-    let client_id = clientId;
+    let client_id = null;
 
     // If user is a client, create a client record
     if (role === 'client') {
-      const { data: clientData, error: clientError } = await supabaseAdmin
+      const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .insert({
           name,
@@ -46,7 +58,7 @@ router.post('/register', async (req, res) => {
 
       if (clientError) {
         // Clean up auth user if client creation fails
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        await supabase.auth.admin.deleteUser(authData.user.id);
         return res.status(400).json({ error: clientError.message });
       }
 
@@ -54,7 +66,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Create profile
-    const { error: profileError } = await supabaseAdmin
+    const { error: profileError } = await supabase
       .from('profiles')
       .insert({
         id: authData.user.id,
@@ -66,9 +78,9 @@ router.post('/register', async (req, res) => {
 
     if (profileError) {
       // Clean up auth user and client if profile creation fails
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      await supabase.auth.admin.deleteUser(authData.user.id);
       if (role === 'client' && client_id) {
-        await supabaseAdmin.from('clients').delete().eq('id', client_id);
+        await supabase.from('clients').delete().eq('id', client_id);
       }
       return res.status(400).json({ error: profileError.message });
     }
@@ -178,4 +190,4 @@ router.post('/logout', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
