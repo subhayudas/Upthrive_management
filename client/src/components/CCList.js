@@ -16,15 +16,39 @@ const CCList = () => {
     requirements: '',
     priority: 'medium'
   });
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [clients, setClients] = useState([]);
 
   useEffect(() => {
     fetchCCList();
   }, []);
 
+  const fetchClients = async () => {
+    try {
+      const response = await axios.get('/api/users');
+      const clientProfiles = response.data.users.filter(u => u.role === 'client');
+      setClients(clientProfiles);
+      if (clientProfiles.length > 0) {
+        setSelectedClient(clientProfiles[0].client_id);
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
+
   const fetchCCList = async () => {
     try {
-      // Handle different ways client ID might be stored
-      const clientId = user.clientId || user.client_id || user.id;
+      let clientId;
+      
+      if (user.role === 'client') {
+        clientId = user.client_id;
+      } else if (user.role === 'manager' || user.role === 'editor') {
+        if (!selectedClient) {
+          await fetchClients();
+          return;
+        }
+        clientId = selectedClient;
+      }
       
       if (!clientId) {
         console.error('No client ID found for user:', user);
@@ -45,10 +69,16 @@ const CCList = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const clientId = user.clientId || user.client_id || user.id;
+      let clientId;
+      
+      if (user.role === 'client') {
+        clientId = user.client_id;
+      } else if (user.role === 'manager') {
+        clientId = selectedClient;
+      }
       
       if (!clientId) {
-        toast.error('Client ID not found');
+        toast.error('Please select a client');
         return;
       }
 
@@ -186,6 +216,30 @@ const CCList = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Client Selection for Managers */}
+      {isManager && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select Client
+          </label>
+          <select
+            value={selectedClient || ''}
+            onChange={(e) => {
+              setSelectedClient(e.target.value);
+              fetchCCList();
+            }}
+            className="input-field"
+          >
+            <option value="">Select a client...</option>
+            {clients.map(client => (
+              <option key={client.client_id} value={client.client_id}>
+                {client.name} ({client.email})
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

@@ -1,7 +1,56 @@
 const express = require('express');
 const { supabase, supabaseAdmin } = require('../config/supabase');
-const { authenticateUser } = require('../middleware/auth');
 const router = express.Router();
+
+// Middleware to authenticate user
+const authenticateUser = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Verify the JWT token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    // Get the user's profile data
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return res.status(401).json({ error: 'User profile not found' });
+    }
+
+    // Set the auth context for Supabase RLS
+    supabase.auth.setSession({
+      access_token: token,
+      refresh_token: '', // You might need to handle refresh tokens
+      user: user
+    });
+
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: profile.role,
+      name: profile.name,
+      client_id: profile.client_id
+    };
+
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(401).json({ error: 'Authentication failed' });
+  }
+};
 
 // Register new user
 router.post('/register', async (req, res) => {
@@ -111,21 +160,24 @@ router.post('/login', async (req, res) => {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', data.user.id)
+      .eq('email', email)
       .single();
 
-    if (profileError) {
-      return res.status(500).json({ error: 'Profile not found' });
+    if (profileError || !profile) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    const userData = {
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      role: profile.role,
+      client_id: profile.client_id, // Make sure this is included
+      created_at: profile.created_at
+    };
+
     res.json({
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        name: profile.name,
-        role: profile.role,
-        clientId: profile.client_id
-      },
+      user: userData,
       session: data.session
     });
   } catch (error) {
@@ -178,4 +230,4 @@ router.post('/logout', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
