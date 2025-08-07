@@ -42,13 +42,26 @@ const CCList = () => {
       let clientId;
       
       if (user.role === 'client') {
-        // For clients, try multiple ways to get their client ID
-        clientId = user.client_id || user.id;
+        // For clients, first try their client_id, then fallback to backend lookup
+        clientId = user.client_id;
         
         if (!clientId) {
-          console.error('Client user missing client_id:', user);
-          toast.error('Client ID not found. Please contact support.');
-          return;
+          console.log('Client missing client_id, fetching from backend...');
+          try {
+            // If client_id not in user object, get it from backend
+            const profileResponse = await axios.get('/api/auth/profile');
+            clientId = profileResponse.data.user.client_id;
+            
+            if (!clientId) {
+              console.error('Client user has no client_id in profile:', user);
+              toast.error('Client profile incomplete. Please contact support.');
+              return;
+            }
+          } catch (error) {
+            console.error('Failed to get client profile:', error);
+            toast.error('Unable to load client information');
+            return;
+          }
         }
       } else if (user.role === 'manager' || user.role === 'editor') {
         if (!selectedClient) {
@@ -64,14 +77,22 @@ const CCList = () => {
         return;
       }
 
-      console.log('Fetching CC list for clientId:', clientId); // Debug log
+      console.log('Fetching CC list for clientId:', clientId);
       const response = await axios.get(`/api/cc-list/${clientId}`);
-      console.log('CC List response:', response.data); // Debug log
+      console.log('CC List response:', response.data);
       setCcList(response.data.ccList);
     } catch (error) {
       console.error('Error fetching CC list:', error);
-      console.error('Error response:', error.response?.data); // Debug log
-      toast.error('Failed to load CC list');
+      console.error('Error response:', error.response?.data);
+      
+      // More specific error messages
+      if (error.response?.status === 403) {
+        toast.error('Access denied. Please contact your manager.');
+      } else if (error.response?.status === 404) {
+        toast.error('Client not found.');
+      } else {
+        toast.error('Failed to load CC list');
+      }
     } finally {
       setLoading(false);
     }
@@ -130,6 +151,18 @@ const CCList = () => {
       toast.error('Failed to delete CC item');
     }
   };
+
+  // Add this useEffect for debugging client users
+  useEffect(() => {
+    console.log('=== CC LIST CLIENT DEBUG ===');
+    console.log('Current user:', user);
+    console.log('User role:', user?.role);
+    console.log('User client_id:', user?.client_id);
+    console.log('User id:', user?.id);
+    console.log('Selected Client:', selectedClient);
+    console.log('CC List length:', ccList.length);
+    console.log('============================');
+  }, [user, selectedClient, ccList]);
 
   if (loading) {
     return (

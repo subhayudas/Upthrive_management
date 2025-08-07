@@ -4,10 +4,44 @@ const { authenticateUser, requireRole, requireClientAccess } = require('../middl
 const router = express.Router();
 
 // Get CC list for a specific client
-router.get('/:clientId', authenticateUser, requireClientAccess, async (req, res) => {
+router.get('/:clientId', authenticateUser, async (req, res) => {
   try {
     const { clientId } = req.params;
 
+    // For client users, verify they're accessing their own CC list
+    if (req.user.role === 'client') {
+      // Get the user's client_id from their profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('client_id')
+        .eq('id', req.user.id)
+        .single();
+
+      if (profileError || !profile?.client_id) {
+        return res.status(403).json({ error: 'Client profile not found' });
+      }
+
+      // Verify they're trying to access their own client's CC list
+      if (profile.client_id !== clientId) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      // Use admin client to bypass RLS for client's own data
+      const { data, error } = await supabase
+        .from('cc_list')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('CC List fetch error:', error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      return res.json({ ccList: data || [] });
+    }
+
+    // For managers/editors, use regular access with RLS
     const { data, error } = await supabase
       .from('cc_list')
       .select('*')

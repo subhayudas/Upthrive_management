@@ -186,7 +186,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Get current user profile
+// Get current user's profile with client_id
 router.get('/profile', authenticateUser, async (req, res) => {
   try {
     const { data: profile, error } = await supabase
@@ -195,19 +195,20 @@ router.get('/profile', authenticateUser, async (req, res) => {
       .eq('id', req.user.id)
       .single();
 
-    if (error) {
+    if (error || !profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
-    res.json({
-      user: {
-        id: req.user.id,
-        email: req.user.email,
-        name: profile.name,
-        role: profile.role,
-        clientId: profile.client_id
-      }
-    });
+    const userData = {
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      role: profile.role,
+      client_id: profile.client_id,
+      created_at: profile.created_at
+    };
+
+    res.json({ user: userData });
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ error: 'Failed to get profile' });
