@@ -42,7 +42,14 @@ const CCList = () => {
       let clientId;
       
       if (user.role === 'client') {
-        clientId = user.client_id;
+        // For clients, try multiple ways to get their client ID
+        clientId = user.client_id || user.id;
+        
+        if (!clientId) {
+          console.error('Client user missing client_id:', user);
+          toast.error('Client ID not found. Please contact support.');
+          return;
+        }
       } else if (user.role === 'manager' || user.role === 'editor') {
         if (!selectedClient) {
           await fetchClients();
@@ -57,10 +64,13 @@ const CCList = () => {
         return;
       }
 
+      console.log('Fetching CC list for clientId:', clientId); // Debug log
       const response = await axios.get(`/api/cc-list/${clientId}`);
+      console.log('CC List response:', response.data); // Debug log
       setCcList(response.data.ccList);
     } catch (error) {
       console.error('Error fetching CC list:', error);
+      console.error('Error response:', error.response?.data); // Debug log
       toast.error('Failed to load CC list');
     } finally {
       setLoading(false);
@@ -73,13 +83,13 @@ const CCList = () => {
       let clientId;
       
       if (user.role === 'client') {
-        clientId = user.client_id;
+        clientId = user.client_id || user.id;
       } else if (user.role === 'manager') {
         clientId = selectedClient;
       }
       
       if (!clientId) {
-        toast.error('Please select a client');
+        toast.error('Client ID not found');
         return;
       }
 
@@ -92,7 +102,7 @@ const CCList = () => {
         content_type: 'post',
         requirements: '',
         priority: 'medium',
-        status: 'active' // Reset status to active
+        status: 'active'
       });
       fetchCCList();
     } catch (error) {

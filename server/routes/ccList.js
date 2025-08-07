@@ -187,4 +187,40 @@ router.post('/:clientId/bulk', authenticateUser, requireRole(['manager']), async
   }
 });
 
+// In your login route, make sure you're returning the correct client data
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // ... your existing auth logic ...
+
+    // Get user profile with client information
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (profileError || !profile) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+
+
+    // For client users, ensure client_id is set properly
+    if (profile.role === 'client' && !profile.client_id) {
+      console.error('Client user missing client_id in profile:', profile);
+      // You might need to fix this in your database
+    }
+
+    res.json({
+      user: userData,
+      session: session
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+};
+
 module.exports = router;
