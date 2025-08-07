@@ -14,7 +14,8 @@ const CCList = () => {
     description: '',
     content_type: 'post',
     requirements: '',
-    priority: 'medium'
+    priority: 'medium',
+    status: 'active' // Add this
   });
   const [selectedClient, setSelectedClient] = useState(null);
   const [clients, setClients] = useState([]);
@@ -90,7 +91,8 @@ const CCList = () => {
         description: '',
         content_type: 'post',
         requirements: '',
-        priority: 'medium'
+        priority: 'medium',
+        status: 'active' // Reset status to active
       });
       fetchCCList();
     } catch (error) {
@@ -193,6 +195,18 @@ const CCList = () => {
                   <option value="high">High</option>
                 </select>
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({...formData, status: e.target.value})}
+                className="input-field"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="completed">Completed</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Requirements</label>

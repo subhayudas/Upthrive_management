@@ -26,7 +26,7 @@ router.get('/:clientId', authenticateUser, requireClientAccess, async (req, res)
   }
 });
 
-// Create new CC list item (managers only)
+// Create new CC list item (managers only) - FIXED
 router.post('/:clientId', authenticateUser, requireRole(['manager']), async (req, res) => {
   try {
     const { clientId } = req.params;
@@ -45,7 +45,7 @@ router.post('/:clientId', authenticateUser, requireRole(['manager']), async (req
         content_type: content_type || 'post',
         requirements: requirements || '',
         priority: priority || 'medium',
-        status: 'pending',
+        status: 'active', // ✅ Changed from 'pending' to 'active'
         created_by: req.user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -167,6 +167,7 @@ router.post('/:clientId/bulk', authenticateUser, requireRole(['manager']), async
       content_type: item.content_type || 'post',
       requirements: item.requirements || '',
       priority: item.priority || 'medium',
+      status: 'active', // ✅ Changed from default to 'active'
       created_by: req.user.id
     }));
 
