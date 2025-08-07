@@ -48,10 +48,16 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, [token]);
 
+  // In your login function, make sure you're setting all necessary user properties
   const login = async (email, password) => {
     try {
       const response = await axios.post('/api/auth/login', { email, password });
       const { user, session } = response.data;
+      
+      // Make sure to set clientId if the user is a client
+      if (user.role === 'client' && user.client_id) {
+        user.clientId = user.client_id; // Add this for backward compatibility
+      }
       
       setUser(user);
       setToken(session.access_token);

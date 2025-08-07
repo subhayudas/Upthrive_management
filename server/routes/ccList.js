@@ -15,10 +15,11 @@ router.get('/:clientId', authenticateUser, requireClientAccess, async (req, res)
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('CC List fetch error:', error);
       return res.status(500).json({ error: error.message });
     }
 
-    res.json({ ccList: data });
+    res.json({ ccList: data || [] });
   } catch (error) {
     console.error('Get CC list error:', error);
     res.status(500).json({ error: 'Failed to get CC list' });
@@ -44,12 +45,16 @@ router.post('/:clientId', authenticateUser, requireRole(['manager']), async (req
         content_type: content_type || 'post',
         requirements: requirements || '',
         priority: priority || 'medium',
-        created_by: req.user.id
+        status: 'pending',
+        created_by: req.user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .select()
       .single();
 
     if (error) {
+      console.error('CC Item create error:', error);
       return res.status(500).json({ error: error.message });
     }
 
@@ -181,4 +186,4 @@ router.post('/:clientId/bulk', authenticateUser, requireRole(['manager']), async
   }
 });
 
-module.exports = router; 
+module.exports = router;

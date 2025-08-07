@@ -23,7 +23,16 @@ const CCList = () => {
 
   const fetchCCList = async () => {
     try {
-      const response = await axios.get(`/api/cc-list/${user.clientId}`);
+      // Handle different ways client ID might be stored
+      const clientId = user.clientId || user.client_id || user.id;
+      
+      if (!clientId) {
+        console.error('No client ID found for user:', user);
+        toast.error('Client ID not found');
+        return;
+      }
+
+      const response = await axios.get(`/api/cc-list/${clientId}`);
       setCcList(response.data.ccList);
     } catch (error) {
       console.error('Error fetching CC list:', error);
@@ -36,7 +45,14 @@ const CCList = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`/api/cc-list/${user.clientId}`, formData);
+      const clientId = user.clientId || user.client_id || user.id;
+      
+      if (!clientId) {
+        toast.error('Client ID not found');
+        return;
+      }
+
+      await axios.post(`/api/cc-list/${clientId}`, formData);
       toast.success('CC item created successfully!');
       setShowCreateForm(false);
       setFormData({
@@ -57,7 +73,14 @@ const CCList = () => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     
     try {
-      await axios.delete(`/api/cc-list/${user.clientId}/${itemId}`);
+      const clientId = user.clientId || user.client_id || user.id;
+      
+      if (!clientId) {
+        toast.error('Client ID not found');
+        return;
+      }
+
+      await axios.delete(`/api/cc-list/${clientId}/${itemId}`);
       toast.success('CC item deleted successfully!');
       fetchCCList();
     } catch (error) {
@@ -220,4 +243,4 @@ const CCList = () => {
   );
 };
 
-export default CCList; 
+export default CCList;
