@@ -176,7 +176,7 @@ const CCList = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Content Calendar</h1>
-        {isManager && (
+        {(isManager || user.role === 'client') && ( // ✅ Allow both managers and clients
           <button
             onClick={() => setShowCreateForm(true)}
             className="btn-primary flex items-center"

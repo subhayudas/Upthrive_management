@@ -61,13 +61,36 @@ router.get('/:clientId', authenticateUser, async (req, res) => {
 });
 
 // Create new CC list item (managers only) - FIXED
-router.post('/:clientId', authenticateUser, requireRole(['manager']), async (req, res) => {
+router.post('/:clientId', authenticateUser, async (req, res) => {
   try {
     const { clientId } = req.params;
     const { title, description, content_type, requirements, priority } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ error: 'Title and description are required' });
+    }
+
+    // For clients, verify they're creating items for their own client_id
+    if (req.user.role === 'client') {
+      // Get the user's client_id from their profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('client_id')
+        .eq('id', req.user.id)
+        .single();
+
+      if (profileError || !profile?.client_id) {
+        return res.status(403).json({ error: 'Client profile not found' });
+      }
+
+      // Verify they're creating items for their own client
+      if (profile.client_id !== clientId) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    } else if (req.user.role === 'manager') {
+      // Managers can create for any client
+    } else {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     const { data, error } = await supabase
@@ -79,7 +102,7 @@ router.post('/:clientId', authenticateUser, requireRole(['manager']), async (req
         content_type: content_type || 'post',
         requirements: requirements || '',
         priority: priority || 'medium',
-        status: 'active', // ✅ Changed from 'pending' to 'active'
+        status: 'active',
         created_by: req.user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
