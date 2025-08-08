@@ -4,12 +4,19 @@ const { authenticateUser, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
 // Get all users (managers only)
-router.get('/', authenticateUser, requireRole(['manager']), async (req, res) => {
+router.get('/', authenticateUser, requireRole(['manager', 'editor']), async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
-      .order('name', { ascending: true });
+      .select(`
+        id,
+        email,
+        name,
+        role,
+        client_id,
+        created_at
+      `)
+      .order('created_at', { ascending: false });
 
     if (error) {
       return res.status(500).json({ error: error.message });
@@ -183,4 +190,4 @@ router.delete('/:userId', authenticateUser, requireRole(['manager']), async (req
   }
 });
 
-module.exports = router; 
+module.exports = router;

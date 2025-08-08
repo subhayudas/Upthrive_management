@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const Tasks = () => {
-  const { user, isEditor } = useAuth();
+  const { user, isEditor, isManager } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -18,10 +18,10 @@ const Tasks = () => {
   const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
-    if (isEditor) {
+    if (isEditor || isManager) {
       fetchTasks();
     }
-  }, [isEditor]);
+  }, [isEditor, isManager]);
 
   const fetchTasks = async () => {
     try {
@@ -109,11 +109,11 @@ const Tasks = () => {
     );
   };
 
-  if (!isEditor) {
+  if (!isEditor && !isManager) {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-600">Access denied. This page is only available to editors.</p>
+          <p className="text-red-600">Access denied. This page is only available to editors and managers.</p>
         </div>
       </div>
     );
@@ -121,31 +121,37 @@ const Tasks = () => {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-purple-400 rounded-full animate-ping mx-auto"></div>
+          </div>
+          <p className="mt-4 text-slate-600 font-medium">Loading your tasks...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
-        <div className="text-sm text-gray-600">
-          {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+              My Tasks
+            </h1>
+            <p className="text-slate-600 mt-2 font-medium">
+              Complete your assigned content creation tasks
+            </p>
+          </div>
         </div>
-      </div>
 
-      {tasks.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks assigned</h3>
-          <p className="text-gray-600">You're all caught up! New tasks will appear here when assigned.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {tasks.map((task) => (
-            <div key={task.id} className="bg-white rounded-lg shadow-md p-6 border-l-4 border-l-blue-500">
+        {/* Tasks Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {tasks.map(task => (
+            <div key={task.id} className="group bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl border border-white/20 p-6 transform hover:scale-105 transition-all duration-300">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -223,7 +229,7 @@ const Tasks = () => {
             </div>
           ))}
         </div>
-      )}
+      </div>
 
       {/* Submit Work Modal */}
       {showSubmitForm && selectedTask && (
