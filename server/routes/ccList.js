@@ -163,21 +163,72 @@ router.put('/:clientId/:itemId', authenticateUser, requireRole(['manager']), asy
 });
 
 // Delete CC list item (managers only)
-router.delete('/:clientId/:itemId', authenticateUser, requireRole(['manager']), async (req, res) => {
+router.delete('/:clientId/:itemId', authenticateUser, async (req, res) => {
   try {
     const { clientId, itemId } = req.params;
+    console.log('DELETE request - clientId:', clientId, 'itemId:', itemId, 'user role:', req.user.role);
 
-    const { error } = await supabase
-      .from('cc_list')
-      .delete()
-      .eq('id', itemId)
-      .eq('client_id', clientId);
+    // For clients, verify they're deleting their own items
+    if (req.user.role === 'client') {
+      // Get the user's client_id from their profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('client_id')
+        .eq('id', req.user.id)
+        .single();
 
-    if (error) {
-      return res.status(500).json({ error: error.message });
+      if (profileError || !profile?.client_id) {
+        console.error('Client profile error:', profileError);
+        return res.status(403).json({ error: 'Client profile not found' });
+      }
+
+      // Verify they're deleting items from their own client
+      if (profile.client_id !== clientId) {
+        console.error('Client trying to delete from wrong client_id');
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      // Delete with additional verification that the item belongs to this client
+      const { error } = await supabase
+        .from('cc_list')
+        .delete()
+        .eq('id', itemId)
+        .eq('client_id', clientId);
+
+      if (error) {
+        console.error('Delete error for client:', error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      console.log('Successfully deleted item for client');
+      return res.json({ message: 'CC item deleted successfully' });
     }
 
-    res.json({ message: 'CC item deleted successfully' });
+    // For managers, allow deletion of any client's items
+    if (req.user.role === 'manager') {
+      const { error } = await supabase
+        .from('cc_list')
+        .delete()
+        .eq('id', itemId)
+        .eq('client_id', clientId);
+
+      if (error) {
+        console.error('Delete error for manager:', error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      console.log('Successfully deleted item for manager');
+      return res.json({ message: 'CC item deleted successfully' });
+    }
+
+    // Editors cannot delete items
+    if (req.user.role === 'editor') {
+      return res.status(403).json({ error: 'Editors cannot delete CC items' });
+    }
+
+    // Other roles not allowed
+    return res.status(403).json({ error: 'Access denied' });
+
   } catch (error) {
     console.error('Delete CC item error:', error);
     res.status(500).json({ error: 'Failed to delete CC item' });

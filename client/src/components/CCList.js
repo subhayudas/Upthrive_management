@@ -135,24 +135,49 @@ const CCList = () => {
     }
   };
 
+  // Update the handleDelete function (around line 135)
   const handleDelete = async (itemId) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     
     try {
-      const clientId = user.clientId || user.client_id || user.id;
+      let clientId;
       console.log('Deleting CC item...'); // Debug log
+      console.log('User role:', user.role); // Debug log
+      console.log('Selected client:', selectedClient); // Debug log
+      console.log('User client_id:', user.client_id); // Debug log
+      
+      // Determine clientId based on user role - SAME LOGIC AS fetchCCList
+      if (user.role === 'client') {
+        clientId = user.client_id || user.id;
+      } else if (user.role === 'manager' || user.role === 'editor') {
+        clientId = selectedClient; // Use selectedClient for managers/editors
+      }
+      
+      console.log('Using clientId for delete:', clientId); // Debug log
       
       if (!clientId) {
         toast.error('Client ID not found');
         return;
       }
       
-      await axios.delete(`/api/cc-list/${clientId}/${itemId}`);
+      console.log('DELETE URL:', `/api/cc-list/${clientId}/${itemId}`); // Debug log
+      
+      const response = await axios.delete(`/api/cc-list/${clientId}/${itemId}`);
+      console.log('Delete response:', response.data); // Debug log
+      
       toast.success('CC item deleted successfully!');
-      fetchCCList();
+      fetchCCList(); // Refresh the list after deletion
     } catch (error) {
       console.error('Error deleting CC item:', error);
-      toast.error('Failed to delete CC item');
+      console.error('Error response:', error.response?.data); // More detailed error logging
+      
+      if (error.response?.status === 403) {
+        toast.error('Access denied. You cannot delete this item.');
+      } else if (error.response?.status === 404) {
+        toast.error('Item not found or already deleted.');
+      } else {
+        toast.error('Failed to delete CC item');
+      }
     }
   };
 
@@ -482,7 +507,7 @@ const CCList = () => {
                     Created {new Date(item.created_at).toLocaleDateString()}
                   </div>
                   
-                  {(isManager || user.role === 'client') && (
+                  {(isManager || user.role === 'client') && ( // Editors should NOT see delete button
                     <button
                       onClick={() => handleDelete(item.id)}
                       className="w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg flex items-center justify-center transition-all duration-200 transform hover:scale-110"
