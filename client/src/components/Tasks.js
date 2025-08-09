@@ -25,6 +25,8 @@ const Tasks = () => {
 
   const fetchTasks = async () => {
     try {
+      console.log('Fetching tasks for editor:', user.id); // Debug log
+      
       const response = await fetch(`${API_BASE_URL}/api/requests/my-tasks`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -33,7 +35,10 @@ const Tasks = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setTasks(data.requests);
+        console.log('Tasks data received:', data); // Debug log
+        console.log('First task completed_work_url:', data.requests?.[0]?.completed_work_url); // Debug log
+        
+        setTasks(data.requests || []); // Ensure it's an array
       } else {
         throw new Error('Failed to fetch tasks');
       }
@@ -181,6 +186,31 @@ const Tasks = () => {
                     <p className="text-gray-600">{task.requirements}</p>
                   </div>
                 )}
+                
+                {/* Original Request Media */}
+                {task.image_url && (
+                  <div className="mt-4">
+                    <h4 className="font-medium text-gray-900 mb-2">📎 Reference Media:</h4>
+                    {task.image_url.includes('.mp4') || task.image_url.includes('.mov') || task.image_url.includes('.avi') || task.image_url.includes('.webm') ? (
+                      <video 
+                        controls 
+                        className="max-w-full h-auto rounded-lg shadow-md border-2 border-blue-200"
+                        style={{ maxHeight: '300px' }}
+                      >
+                        <source src={task.image_url} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : (
+                      <img 
+                        src={task.image_url} 
+                        alt="Request reference" 
+                        className="max-w-full h-auto rounded-lg shadow-md border-2 border-blue-200"
+                        style={{ maxHeight: '300px' }}
+                      />
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">Reference material from the original request</p>
+                  </div>
+                )}
               </div>
 
               {/* Show manager feedback if rejected by manager */}
@@ -205,11 +235,11 @@ const Tasks = () => {
               {/* Show previous work if it exists */}
               {task.completed_work_url && (
                 <div className="mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Previous Submission:</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">📋 Previous Submission:</h4>
                   {task.completed_work_url.includes('.mp4') || task.completed_work_url.includes('.mov') || task.completed_work_url.includes('.avi') || task.completed_work_url.includes('.webm') ? (
                     <video 
                       controls 
-                      className="max-w-xs rounded border"
+                      className="max-w-xs rounded border border-green-200"
                       style={{ maxHeight: '200px' }}
                     >
                       <source src={task.completed_work_url} type="video/mp4" />
@@ -219,9 +249,10 @@ const Tasks = () => {
                     <img 
                       src={task.completed_work_url} 
                       alt="Previous work" 
-                      className="max-w-xs rounded border"
+                      className="max-w-xs rounded border border-green-200"
                     />
                   )}
+                  <p className="text-xs text-gray-500 mt-1">Your previously submitted work</p>
                 </div>
               )}
 

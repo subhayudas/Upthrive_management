@@ -38,27 +38,16 @@ const upload = multer({
 router.get('/my-tasks', authenticateUser, async (req, res) => {
   try {
     let query = supabase
-      .from('tasks')
+      .from('requests') // Query from requests table instead of tasks
       .select(`
         *,
-        request:request_id (
-          *,
-          from_user:from_user_id (name, email),
-          clients:client_id (name)
-        ),
-        editor:editor_id (name, email),
-        manager:manager_id (name, email)
+        from_user:from_user_id (name, email),
+        assigned_editor:assigned_editor_id (name, email),
+        clients:client_id (name)
       `)
+      .eq('assigned_editor_id', req.user.id)
+      .in('status', ['assigned_to_editor', 'manager_rejected', 'client_rejected', 'submitted_for_review'])
       .order('created_at', { ascending: false });
-
-    if (req.user.role === 'editor') {
-      query = query.eq('editor_id', req.user.id);
-    } else if (req.user.role === 'manager') {
-      query = query.eq('manager_id', req.user.id);
-    } else if (req.user.role === 'client') {
-      // Clients can see tasks related to their requests
-      query = query.eq('request.client_id', req.user.clientId);
-    }
 
     const { data, error } = await query;
 
@@ -85,10 +74,10 @@ router.put('/:taskId/submit', authenticateUser, requireRole(['editor']), upload.
 
     // Verify task belongs to editor
     const { data: task, error: taskError } = await supabase
-      .from('tasks')
+      .from('requests')
       .select('*')
       .eq('id', taskId)
-      .eq('editor_id', req.user.id)
+      .eq('assigned_editor_id', req.user.id)
       .single();
 
     if (taskError || !task) {
@@ -101,7 +90,7 @@ router.put('/:taskId/submit', authenticateUser, requireRole(['editor']), upload.
     }
 
     const { data, error } = await supabase
-      .from('tasks')
+      .from('requests')
       .update({
         status: 'submitted_for_review',
         submitted_message: message,
@@ -136,7 +125,7 @@ router.put('/:taskId/review', authenticateUser, requireRole(['manager']), async 
 
     // Verify task belongs to manager
     const { data: task, error: taskError } = await supabase
-      .from('tasks')
+      .from('requests')
       .select('*')
       .eq('id', taskId)
       .eq('manager_id', req.user.id)
@@ -154,7 +143,7 @@ router.put('/:taskId/review', authenticateUser, requireRole(['manager']), async 
     }
 
     const { data, error } = await supabase
-      .from('tasks')
+      .from('requests')
       .update({
         status: newStatus,
         manager_feedback: feedback || '',
@@ -187,7 +176,7 @@ router.put('/:taskId/client-review', authenticateUser, requireRole(['client']), 
 
     // Verify task belongs to client
     const { data: task, error: taskError } = await supabase
-      .from('tasks')
+      .from('requests')
       .select(`
         *,
         request:request_id (client_id)
@@ -211,7 +200,7 @@ router.put('/:taskId/client-review', authenticateUser, requireRole(['client']), 
     }
 
     const { data, error } = await supabase
-      .from('tasks')
+      .from('requests')
       .update({
         status: newStatus,
         client_feedback: feedback || '',
@@ -232,4 +221,4 @@ router.put('/:taskId/client-review', authenticateUser, requireRole(['client']), 
   }
 });
 
-module.exports = router; 
+module.exports = router;

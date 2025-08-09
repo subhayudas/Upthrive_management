@@ -5,6 +5,13 @@ import toast from 'react-hot-toast';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const ManagerReviewModal = ({ request, isOpen, onClose, onReview }) => {
+  console.log('=== MANAGER REVIEW MODAL DEBUG ===');
+  console.log('Request:', request);
+  console.log('Completed work URL:', request?.completed_work_url);
+  console.log('Editor message:', request?.editor_message);
+  console.log('Request status:', request?.status);
+  console.log('====================================');
+
   const [action, setAction] = useState('');
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);

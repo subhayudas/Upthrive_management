@@ -312,47 +312,78 @@ router.put('/:requestId/submit', authenticateUser, requireRole(['editor']), uplo
     const { requestId } = req.params;
     const { message } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
-    }
+    console.log('=== EDITOR SUBMIT DEBUG ===');
+    console.log('Request ID:', requestId);
+    console.log('Editor:', req.user.id);
+    console.log('File:', req.file);
+    console.log('Message:', message);
 
-    // Verify the request is assigned to this editor and is in a status that allows submission
+    // Check if request exists and is assigned to this editor
     const { data: request, error: requestError } = await supabase
       .from('requests')
       .select('*')
       .eq('id', requestId)
       .eq('assigned_editor_id', req.user.id)
-      .in('status', ['assigned_to_editor', 'manager_rejected', 'client_rejected']) // Allow resubmission
       .single();
 
     if (requestError || !request) {
-      return res.status(403).json({ error: 'Request not found or not available for submission' });
+      return res.status(404).json({ error: 'Request not found or not assigned to you' });
     }
 
     let completedWorkUrl = null;
+    
+    // Upload file to Supabase Storage if provided
     if (req.file) {
-      completedWorkUrl = `/uploads/${req.file.filename}`;
+      const fileName = `completed-work/${req.user.id}/${Date.now()}-${req.file.originalname}`;
+      
+      console.log('Uploading completed work to Supabase:', fileName);
+      console.log('File size:', req.file.size);
+      console.log('File type:', req.file.mimetype);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('request-files')
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('File upload error:', uploadError);
+        return res.status(500).json({ 
+          error: 'Failed to upload file',
+          details: uploadError.message 
+        });
+      }
+
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('request-files')
+        .getPublicUrl(fileName);
+
+      completedWorkUrl = urlData.publicUrl;
+      console.log('Completed work uploaded successfully:', completedWorkUrl);
     }
 
-    // Determine the next status based on current status
-    let nextStatus = 'submitted_for_review';
-    if (request.status === 'client_rejected') {
-      // If client rejected, send back to manager for review
-      nextStatus = 'submitted_for_review';
+    // Update the request with editor's submission
+    const updateData = {
+      status: 'submitted_for_review',
+      editor_message: message,
+      updated_at: new Date().toISOString(),
+      // Clear previous feedback when resubmitting
+      manager_feedback: null,
+      client_feedback: null
+    };
+
+    // Only update completed_work_url if a new file was uploaded
+    if (completedWorkUrl) {
+      updateData.completed_work_url = completedWorkUrl;
     }
 
-    // Update the request status and add editor's message
+    console.log('Updating request with data:', updateData);
+
     const { data, error } = await supabase
       .from('requests')
-      .update({
-        status: nextStatus,
-        editor_message: message,
-        completed_work_url: completedWorkUrl || request.completed_work_url, // Keep existing if no new file
-        updated_at: new Date().toISOString(),
-        // Clear previous feedback when resubmitting
-        manager_feedback: null,
-        client_feedback: null
-      })
+      .update(updateData)
       .eq('id', requestId)
       .select(`
         *,
@@ -367,10 +398,12 @@ router.put('/:requestId/submit', authenticateUser, requireRole(['editor']), uplo
       return res.status(500).json({ error: error.message });
     }
 
+    console.log('Successfully updated request. Completed work URL:', data.completed_work_url);
     res.json({ request: data });
+
   } catch (error) {
     console.error('Submit request error:', error);
-    res.status(500).json({ error: 'Failed to submit request' });
+    res.status(500).json({ error: 'Failed to submit work' });
   }
 });
 
