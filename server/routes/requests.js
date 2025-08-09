@@ -5,69 +5,106 @@ const { supabase } = require('../config/supabase');
 const { authenticateUser, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({
+// Configure multer for image and video uploads
+const storage = multer.memoryStorage();
+const upload = multer({ 
   storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  },
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|webm/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error('Only images and videos are allowed'));
     }
   }
 });
 
 // Create request from client to manager
-router.post('/', authenticateUser, requireRole(['client']), upload.single('image'), async (req, res) => {
+router.post('/', authenticateUser, requireRole(['client']), upload.single('file'), async (req, res) => {
   try {
     const { message, content_type, requirements } = req.body;
-    
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+    let fileUrl = null;
+
+    console.log('=== FILE UPLOAD DEBUG ===');
+    console.log('User:', req.user);
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+
+    // Upload file to Supabase Storage if provided
+    if (req.file) {
+      const fileName = `${req.user.id}/${Date.now()}-${req.file.originalname}`;
+      
+      console.log('Attempting to upload file:', fileName);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('request-files')
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Detailed upload error:', uploadError);
+        return res.status(500).json({ 
+          error: 'Failed to upload file',
+          details: uploadError.message 
+        });
+      }
+
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('request-files')
+        .getPublicUrl(fileName);
+
+      fileUrl = urlData.publicUrl;
+      console.log('File uploaded successfully:', fileUrl);
     }
 
-    let imageUrl = null;
-    if (req.file) {
-      // In production, you'd upload to Supabase Storage or another cloud service
-      imageUrl = `/uploads/${req.file.filename}`;
+    // Get client_id from user's profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('client_id')
+      .eq('id', req.user.id)
+      .single();
+
+    if (profileError || !profile?.client_id) {
+      console.error('Client profile error:', profileError);
+      return res.status(403).json({ error: 'Client profile not found' });
     }
+
+    // Create request with correct column names
+    const insertData = {
+      client_id: profile.client_id,
+      from_user_id: req.user.id,          // ✅ Change from user_id to from_user_id
+      message,
+      content_type: content_type || 'post',
+      requirements: requirements || '',
+      image_url: fileUrl,                  // ✅ Use image_url (existing column)
+      status: 'pending_manager_review',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    console.log('Inserting request data:', insertData);
 
     const { data, error } = await supabase
       .from('requests')
-      .insert({
-        client_id: req.user.clientId,
-        from_user_id: req.user.id,
-        message,
-        content_type: content_type || 'post',
-        requirements: requirements || '',
-        image_url: imageUrl,
-        status: 'pending_manager_review'
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (error) {
+      console.error('Request creation error:', error);
       return res.status(500).json({ error: error.message });
     }
 
+    console.log('Request created successfully:', data.id);
     res.status(201).json({ request: data });
+
   } catch (error) {
     console.error('Create request error:', error);
     res.status(500).json({ error: 'Failed to create request' });

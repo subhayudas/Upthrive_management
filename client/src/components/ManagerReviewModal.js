@@ -84,11 +84,23 @@ const ManagerReviewModal = ({ request, isOpen, onClose, onReview }) => {
           {request?.completed_work_url && (
             <div>
               <h3 className="font-medium text-gray-900 mb-2">Completed Work:</h3>
-              <img 
-                src={request.completed_work_url} 
-                alt="Completed work" 
-                className="max-w-full h-auto rounded border"
-              />
+              {request.completed_work_url.includes('.mp4') || request.completed_work_url.includes('.mov') || request.completed_work_url.includes('.avi') || request.completed_work_url.includes('.webm') ? (
+                <video 
+                  controls 
+                  className="max-w-full h-auto rounded border"
+                  style={{ maxHeight: '400px' }}
+                >
+                  <source src={request.completed_work_url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <img 
+                  src={request.completed_work_url} 
+                  alt="Completed work" 
+                  className="max-w-full h-auto rounded border"
+                  style={{ maxHeight: '400px' }}
+                />
+              )}
             </div>
           )}
 

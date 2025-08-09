@@ -60,22 +60,32 @@ const Requests = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
+      console.log('Creating request with file:', selectedFile?.name); // Debug log
+      
       const formDataToSend = new FormData();
       formDataToSend.append('message', formData.message);
       formDataToSend.append('content_type', formData.content_type);
       formDataToSend.append('requirements', formData.requirements);
       
       if (selectedFile) {
-        formDataToSend.append('image', selectedFile);
+        formDataToSend.append('file', selectedFile); // Must match backend multer field name
+        console.log('File type:', selectedFile.type); // Debug log
+        console.log('File size:', selectedFile.size); // Debug log
       }
 
-      await axios.post(`${API_BASE_URL}/api/requests`, formDataToSend, {
+      // Debug: Log all form data entries
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log('FormData:', key, value);
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/api/requests`, formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       
+      console.log('Request creation response:', response.data); // Debug log
       toast.success('Request created successfully!');
       setShowCreateForm(false);
       setFormData({
@@ -87,16 +97,35 @@ const Requests = () => {
       fetchRequests();
     } catch (error) {
       console.error('Error creating request:', error);
-      toast.error('Failed to create request');
+      console.error('Error response:', error.response?.data); // More detailed error
+      
+      if (error.response?.data?.message) {
+        toast.error(`Error: ${error.response.data.message}`);
+      } else {
+        toast.error('Failed to create request');
+      }
     }
   };
 
+  // Update handleFileChange to accept videos too
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
+    
+    if (!file) return;
+    
+    // Check file size (100MB = 100 * 1024 * 1024 bytes)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 100MB');
+      return;
+    }
+    
+    if (file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
       setSelectedFile(file);
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      toast.success(`${file.type.startsWith('video/') ? 'Video' : 'Image'} selected: ${file.name} (${fileSizeMB}MB)`);
     } else {
-      toast.error('Please select a valid image file');
+      toast.error('Please select a valid image or video file');
     }
   };
 
@@ -270,10 +299,10 @@ const Requests = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Image (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-700">File (Optional)</label>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*" // Accept both images and videos
                       onChange={handleFileChange}
                       className="input-field"
                     />
@@ -327,12 +356,25 @@ const Requests = () => {
                 </div>
               )}
               {request.image_url && (
-                <div className="mb-3">
-                  <img 
-                    src={request.image_url} 
-                    alt="Request attachment" 
-                    className="w-32 h-32 object-cover rounded-lg"
-                  />
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-slate-700 mb-2">Attached File:</p>
+                  {request.image_url.includes('.mp4') || request.image_url.includes('.mov') || request.image_url.includes('.avi') || request.image_url.includes('.webm') ? (
+                    <video 
+                      controls 
+                      className="max-w-full h-auto rounded-lg shadow-md"
+                      style={{ maxHeight: '300px' }}
+                    >
+                      <source src={request.image_url} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <img 
+                      src={request.image_url} 
+                      alt="Request attachment" 
+                      className="max-w-full h-auto rounded-lg shadow-md"
+                      style={{ maxHeight: '300px' }}
+                    />
+                  )}
                 </div>
               )}
               <div className="flex justify-between items-center text-sm text-gray-500">

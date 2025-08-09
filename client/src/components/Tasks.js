@@ -206,11 +206,22 @@ const Tasks = () => {
               {task.completed_work_url && (
                 <div className="mb-4">
                   <h4 className="font-medium text-gray-900 mb-2">Previous Submission:</h4>
-                  <img 
-                    src={task.completed_work_url} 
-                    alt="Previous work" 
-                    className="max-w-xs rounded border"
-                  />
+                  {task.completed_work_url.includes('.mp4') || task.completed_work_url.includes('.mov') || task.completed_work_url.includes('.avi') || task.completed_work_url.includes('.webm') ? (
+                    <video 
+                      controls 
+                      className="max-w-xs rounded border"
+                      style={{ maxHeight: '200px' }}
+                    >
+                      <source src={task.completed_work_url} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <img 
+                      src={task.completed_work_url} 
+                      alt="Previous work" 
+                      className="max-w-xs rounded border"
+                    />
+                  )}
                 </div>
               )}
 
@@ -266,7 +277,7 @@ const Tasks = () => {
                   type="file"
                   onChange={handleFileChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  accept="image/*"
+                  accept="image/*,video/*" // ✅ Accept both images and videos
                 />
                 {selectedFile && (
                   <p className="text-sm text-gray-600 mt-1">
