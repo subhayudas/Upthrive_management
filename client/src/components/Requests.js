@@ -7,6 +7,8 @@ import AssignRequestModal from './AssignRequestModal';
 import ManagerReviewModal from './ManagerReviewModal';
 import ClientReviewModal from './ClientReviewModal';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const Requests = () => {
   const { user, isClient, isManager, isEditor } = useAuth();
   const [requests, setRequests] = useState([]);
@@ -25,13 +27,27 @@ const Requests = () => {
   const [clientReviewModalOpen, setClientReviewModalOpen] = useState(false);
   const [selectedRequestForClientReview, setSelectedRequestForClientReview] = useState(null);
 
+  const getPageTitle = () => {
+    if (isClient) return 'My Requests';
+    if (isManager) return 'All Requests';
+    if (isEditor) return 'Request Queue';
+    return 'Requests';
+  };
+
+  const getPageDescription = () => {
+    if (isClient) return 'Submit and track your content creation requests';
+    if (isManager) return 'Review, assign, and manage all incoming requests';
+    if (isEditor) return 'View requests assigned to you for completion';
+    return 'Manage content requests';
+  };
+
   useEffect(() => {
     fetchRequests();
   }, []);
 
   const fetchRequests = async () => {
     try {
-      const response = await axios.get('/api/requests/my-requests');
+      const response = await axios.get(`${API_BASE_URL}/api/requests/my-requests`);
       setRequests(response.data.requests);
     } catch (error) {
       console.error('Error fetching requests:', error);
@@ -44,21 +60,32 @@ const Requests = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
+      console.log('Creating request with file:', selectedFile?.name); // Debug log
+      
       const formDataToSend = new FormData();
       formDataToSend.append('message', formData.message);
       formDataToSend.append('content_type', formData.content_type);
       formDataToSend.append('requirements', formData.requirements);
       
       if (selectedFile) {
-        formDataToSend.append('image', selectedFile);
+        formDataToSend.append('file', selectedFile); // Must match backend multer field name
+        console.log('File type:', selectedFile.type); // Debug log
+        console.log('File size:', selectedFile.size); // Debug log
       }
 
-      await axios.post('/api/requests', formDataToSend, {
+      // Debug: Log all form data entries
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log('FormData:', key, value);
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/api/requests`, formDataToSend, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       
+      console.log('Request creation response:', response.data); // Debug log
       toast.success('Request created successfully!');
       setShowCreateForm(false);
       setFormData({
@@ -70,16 +97,35 @@ const Requests = () => {
       fetchRequests();
     } catch (error) {
       console.error('Error creating request:', error);
-      toast.error('Failed to create request');
+      console.error('Error response:', error.response?.data); // More detailed error
+      
+      if (error.response?.data?.message) {
+        toast.error(`Error: ${error.response.data.message}`);
+      } else {
+        toast.error('Failed to create request');
+      }
     }
   };
 
+  // Update handleFileChange to accept videos too
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
+    
+    if (!file) return;
+    
+    // Check file size (100MB = 100 * 1024 * 1024 bytes)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 100MB');
+      return;
+    }
+    
+    if (file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
       setSelectedFile(file);
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      toast.success(`${file.type.startsWith('video/') ? 'Video' : 'Image'} selected: ${file.name} (${fileSizeMB}MB)`);
     } else {
-      toast.error('Please select a valid image file');
+      toast.error('Please select a valid image or video file');
     }
   };
 
@@ -174,168 +220,210 @@ const Requests = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-purple-400 rounded-full animate-ping mx-auto"></div>
+          </div>
+          <p className="mt-4 text-slate-600 font-medium">Loading your requests...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Requests</h1>
-        {isClient && (
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="btn-primary flex items-center"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            New Request
-          </button>
-        )}
-      </div>
-
-      {/* Create Form */}
-      {showCreateForm && (
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Create New Request</h3>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Message</label>
-              <textarea
-                value={formData.message}
-                onChange={(e) => setFormData({...formData, message: e.target.value})}
-                className="input-field"
-                rows="4"
-                placeholder="Describe your social media post request..."
-                required
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Content Type</label>
-                <select
-                  value={formData.content_type}
-                  onChange={(e) => setFormData({...formData, content_type: e.target.value})}
-                  className="input-field"
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                  {getPageTitle()}
+                </h1>
+                <p className="text-slate-600 mt-2 font-medium">
+                  {getPageDescription()}
+                </p>
+              </div>
+              {isClient && (
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
                 >
-                  <option value="post">Post</option>
-                  <option value="reel">Reel</option>
-                  <option value="story">Story</option>
-                  <option value="carousel">Carousel</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Image (Optional)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="input-field"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Requirements</label>
-              <textarea
-                value={formData.requirements}
-                onChange={(e) => setFormData({...formData, requirements: e.target.value})}
-                className="input-field"
-                rows="2"
-                placeholder="Any specific requirements or notes..."
-              />
-            </div>
-            <div className="flex space-x-3">
-              <button type="submit" className="btn-primary">
-                Submit Request
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(false)}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Requests List */}
-      <div className="space-y-4">
-        {requests.map((request) => (
-          <div key={request.id} className="card">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center">
-                <MessageSquare className="h-5 w-5 text-primary-600 mr-2" />
-                <span className="text-sm font-medium text-gray-500 uppercase">
-                  {request.content_type}
-                </span>
-              </div>
-              {getStatusBadge(request.status)}
-            </div>
-            <p className="text-gray-900 mb-3">{request.message}</p>
-            {request.requirements && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-500 mb-1">Requirements:</p>
-                <p className="text-xs text-gray-600">{request.requirements}</p>
-              </div>
-            )}
-            {request.image_url && (
-              <div className="mb-3">
-                <img 
-                  src={request.image_url} 
-                  alt="Request attachment" 
-                  className="w-32 h-32 object-cover rounded-lg"
-                />
-              </div>
-            )}
-            <div className="flex justify-between items-center text-sm text-gray-500">
-              <span>Created: {new Date(request.created_at).toLocaleDateString()}</span>
-              {request.from_user && (
-                <span>From: {request.from_user.name}</span>
+                  <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-200" />
+                  New Request
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-200"></div>
+                </button>
               )}
             </div>
-
-            {/* Add this to your request display table/cards: */}
-            {renderRequestActions(request)}
           </div>
-        ))}
-      </div>
-
-      {requests.length === 0 && (
-        <div className="text-center py-12">
-          <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No requests yet</h3>
-          <p className="text-gray-500">
-            {isClient ? 'Create your first request to get started.' : 'No requests have been submitted yet.'}
-          </p>
         </div>
-      )}
 
-      {/* Add the assignment modal */}
-      <AssignRequestModal
-        request={selectedRequest}
-        isOpen={assignModalOpen}
-        onClose={() => setAssignModalOpen(false)}
-        onAssign={handleAssignComplete}
-      />
+        {/* Create Form - wrap in backdrop blur container */}
+        {showCreateForm && (
+          <div className="mb-8 animate-fadeIn">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-8">
+              {/* Your existing form content with updated styling */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <Plus className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800">Create New Request</h3>
+              </div>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Message</label>
+                  <textarea
+                    value={formData.message}
+                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    className="input-field"
+                    rows="4"
+                    placeholder="Describe your social media post request..."
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Content Type</label>
+                    <select
+                      value={formData.content_type}
+                      onChange={(e) => setFormData({...formData, content_type: e.target.value})}
+                      className="input-field"
+                    >
+                      <option value="post">Post</option>
+                      <option value="reel">Reel</option>
+                      <option value="story">Story</option>
+                      <option value="carousel">Carousel</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">File (Optional)</label>
+                    <input
+                      type="file"
+                      accept="image/*,video/*" // Accept both images and videos
+                      onChange={handleFileChange}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Requirements</label>
+                  <textarea
+                    value={formData.requirements}
+                    onChange={(e) => setFormData({...formData, requirements: e.target.value})}
+                    className="input-field"
+                    rows="2"
+                    placeholder="Any specific requirements or notes..."
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button type="submit" className="btn-primary">
+                    Submit Request
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateForm(false)}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
-      {/* Add the review modal */}
-      <ManagerReviewModal
-        request={selectedRequestForReview}
-        isOpen={reviewModalOpen}
-        onClose={() => setReviewModalOpen(false)}
-        onReview={handleReviewComplete}
-      />
+        {/* Requests Grid - Update card styling */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {requests.map(request => (
+            <div key={request.id} className="group bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl border border-white/20 p-6 transform hover:scale-105 transition-all duration-300">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center">
+                  <MessageSquare className="h-5 w-5 text-primary-600 mr-2" />
+                  <span className="text-sm font-medium text-gray-500 uppercase">
+                    {request.content_type}
+                  </span>
+                </div>
+                {getStatusBadge(request.status)}
+              </div>
+              <p className="text-gray-900 mb-3">{request.message}</p>
+              {request.requirements && (
+                <div className="mb-3">
+                  <p className="text-xs font-medium text-gray-500 mb-1">Requirements:</p>
+                  <p className="text-xs text-gray-600">{request.requirements}</p>
+                </div>
+              )}
+              {request.image_url && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-slate-700 mb-2">Attached File:</p>
+                  {request.image_url.includes('.mp4') || request.image_url.includes('.mov') || request.image_url.includes('.avi') || request.image_url.includes('.webm') ? (
+                    <video 
+                      controls 
+                      className="max-w-full h-auto rounded-lg shadow-md"
+                      style={{ maxHeight: '300px' }}
+                    >
+                      <source src={request.image_url} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <img 
+                      src={request.image_url} 
+                      alt="Request attachment" 
+                      className="max-w-full h-auto rounded-lg shadow-md"
+                      style={{ maxHeight: '300px' }}
+                    />
+                  )}
+                </div>
+              )}
+              <div className="flex justify-between items-center text-sm text-gray-500">
+                <span>Created: {new Date(request.created_at).toLocaleDateString()}</span>
+                {request.from_user && (
+                  <span>From: {request.from_user.name}</span>
+                )}
+              </div>
 
-      {/* Add the client review modal */}
-      <ClientReviewModal
-        request={selectedRequestForClientReview}
-        isOpen={clientReviewModalOpen}
-        onClose={() => setClientReviewModalOpen(false)}
-        onReview={handleClientReviewComplete}
-      />
+              {/* Add this to your request display table/cards: */}
+              {renderRequestActions(request)}
+            </div>
+          ))}
+        </div>
+
+        {requests.length === 0 && (
+          <div className="text-center py-12">
+            <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No requests yet</h3>
+            <p className="text-gray-500">
+              {isClient ? 'Create your first request to get started.' : 'No requests have been submitted yet.'}
+            </p>
+          </div>
+        )}
+
+        {/* Add the assignment modal */}
+        <AssignRequestModal
+          request={selectedRequest}
+          isOpen={assignModalOpen}
+          onClose={() => setAssignModalOpen(false)}
+          onAssign={handleAssignComplete}
+        />
+
+        {/* Add the review modal */}
+        <ManagerReviewModal
+          request={selectedRequestForReview}
+          isOpen={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          onReview={handleReviewComplete}
+        />
+
+        {/* Add the client review modal */}
+        <ClientReviewModal
+          request={selectedRequestForClientReview}
+          isOpen={clientReviewModalOpen}
+          onClose={() => setClientReviewModalOpen(false)}
+          onReview={handleClientReviewComplete}
+        />
+      </div>
     </div>
   );
 };

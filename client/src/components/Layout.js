@@ -6,7 +6,6 @@ import {
   FileText,
   MessageSquare,
   CheckSquare,
-  Users,
   Menu,
   X,
   LogOut,
@@ -25,12 +24,11 @@ const Layout = ({ children }) => {
     navigate('/login');
   };
 
-  const navigation = [
+  const navigationItems = [
     { name: 'Dashboard', href: '/', icon: Home },
-    ...(isManager || isEditor ? [{ name: 'CC Lists', href: '/cc-list', icon: FileText }] : []),
     { name: 'Requests', href: '/requests', icon: MessageSquare },
-    { name: 'Tasks', href: '/tasks', icon: CheckSquare },
-    ...(isManager ? [{ name: 'Users', href: '/users', icon: Users }] : []),
+    { name: 'CC Lists', href: '/cc-list', icon: FileText },
+    ...(isEditor && !isManager ? [{ name: 'Tasks', href: '/tasks', icon: CheckSquare }] : []), // Only editors, not managers
   ];
 
   const isActive = (href) => {
@@ -56,7 +54,7 @@ const Layout = ({ children }) => {
             </button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
+            {navigationItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
@@ -76,27 +74,38 @@ const Layout = ({ children }) => {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
-          <div className="flex h-16 items-center px-4">
-            <h1 className="text-xl font-semibold text-gray-900">Agency Dashboard</h1>
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+        <div className="flex flex-col flex-grow bg-white/80 backdrop-blur-sm border-r border-gray-200 pt-5 pb-4 overflow-y-auto">
+          <div className="flex items-center flex-shrink-0 px-4">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Agency Dashboard
+            </h1>
           </div>
-          <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                  isActive(item.href)
-                    ? 'bg-primary-100 text-primary-900'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </Link>
-            ))}
-          </nav>
+          <div className="mt-8 flex-grow flex flex-col">
+            <nav className="flex-1 px-2 space-y-2 bg-transparent">
+              {navigationItems.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className={`${
+                      isActive
+                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg'
+                        : 'text-slate-700 hover:bg-white/60 hover:text-slate-900'
+                    } group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105`}
+                  >
+                    <item.icon
+                      className={`${
+                        isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'
+                      } mr-3 h-5 w-5 transition-colors duration-200`}
+                    />
+                    {item.name}
+                  </a>
+                );
+              })}
+            </nav>
+          </div>
         </div>
       </div>
 
@@ -147,4 +156,4 @@ const Layout = ({ children }) => {
   );
 };
 
-export default Layout; 
+export default Layout;

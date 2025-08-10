@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Check, XCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
   const [action, setAction] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -17,7 +19,7 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/requests/${request.id}/client-review`, {
+      const response = await fetch(`${API_BASE_URL}/api/requests/${request.id}/client-review`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -82,22 +84,24 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
 
           {request?.completed_work_url && (
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Final Work:</h3>
-              <div className="relative">
+              <h3 className="font-medium text-gray-900 mb-2">Completed Work:</h3>
+              {request.completed_work_url.includes('.mp4') || request.completed_work_url.includes('.mov') || request.completed_work_url.includes('.avi') || request.completed_work_url.includes('.webm') ? (
+                <video 
+                  controls 
+                  className="max-w-full h-auto rounded border"
+                  style={{ maxHeight: '400px' }}
+                >
+                  <source src={request.completed_work_url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
                 <img 
                   src={request.completed_work_url} 
-                  alt="Final work" 
-                  className="max-w-full h-auto rounded border shadow-sm"
+                  alt="Completed work" 
+                  className="max-w-full h-auto rounded border"
+                  style={{ maxHeight: '400px' }}
                 />
-                <a
-                  href={request.completed_work_url}
-                  download
-                  className="absolute top-2 right-2 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
-                  title="Download image"
-                >
-                  <Download className="w-4 h-4" />
-                </a>
-              </div>
+              )}
             </div>
           )}
 

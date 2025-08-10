@@ -2,7 +2,16 @@ import React, { useState } from 'react';
 import { X, Check, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const ManagerReviewModal = ({ request, isOpen, onClose, onReview }) => {
+  console.log('=== MANAGER REVIEW MODAL DEBUG ===');
+  console.log('Request:', request);
+  console.log('Completed work URL:', request?.completed_work_url);
+  console.log('Editor message:', request?.editor_message);
+  console.log('Request status:', request?.status);
+  console.log('====================================');
+
   const [action, setAction] = useState('');
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +31,7 @@ const ManagerReviewModal = ({ request, isOpen, onClose, onReview }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/requests/${request.id}/review`, {
+      const response = await fetch(`${API_BASE_URL}/api/requests/${request.id}/review`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -82,11 +91,23 @@ const ManagerReviewModal = ({ request, isOpen, onClose, onReview }) => {
           {request?.completed_work_url && (
             <div>
               <h3 className="font-medium text-gray-900 mb-2">Completed Work:</h3>
-              <img 
-                src={request.completed_work_url} 
-                alt="Completed work" 
-                className="max-w-full h-auto rounded border"
-              />
+              {request.completed_work_url.includes('.mp4') || request.completed_work_url.includes('.mov') || request.completed_work_url.includes('.avi') || request.completed_work_url.includes('.webm') ? (
+                <video 
+                  controls 
+                  className="max-w-full h-auto rounded border"
+                  style={{ maxHeight: '400px' }}
+                >
+                  <source src={request.completed_work_url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <img 
+                  src={request.completed_work_url} 
+                  alt="Completed work" 
+                  className="max-w-full h-auto rounded border"
+                  style={{ maxHeight: '400px' }}
+                />
+              )}
             </div>
           )}
 

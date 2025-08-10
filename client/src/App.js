@@ -11,7 +11,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import CCList from './components/CCList';
 import Requests from './components/Requests';
 import Tasks from './components/Tasks';
-import Users from './components/Users';
 
 function App() {
   return (
@@ -54,13 +53,6 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Tasks />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/users" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Users />
                 </Layout>
               </ProtectedRoute>
             } />

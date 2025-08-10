@@ -5,69 +5,106 @@ const { supabase } = require('../config/supabase');
 const { authenticateUser, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({
+// Configure multer for image and video uploads
+const storage = multer.memoryStorage();
+const upload = multer({ 
   storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  },
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|webm/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error('Only images and videos are allowed'));
     }
   }
 });
 
 // Create request from client to manager
-router.post('/', authenticateUser, requireRole(['client']), upload.single('image'), async (req, res) => {
+router.post('/', authenticateUser, requireRole(['client']), upload.single('file'), async (req, res) => {
   try {
     const { message, content_type, requirements } = req.body;
-    
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+    let fileUrl = null;
+
+    console.log('=== FILE UPLOAD DEBUG ===');
+    console.log('User:', req.user);
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+
+    // Upload file to Supabase Storage if provided
+    if (req.file) {
+      const fileName = `${req.user.id}/${Date.now()}-${req.file.originalname}`;
+      
+      console.log('Attempting to upload file:', fileName);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('request-files')
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Detailed upload error:', uploadError);
+        return res.status(500).json({ 
+          error: 'Failed to upload file',
+          details: uploadError.message 
+        });
+      }
+
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('request-files')
+        .getPublicUrl(fileName);
+
+      fileUrl = urlData.publicUrl;
+      console.log('File uploaded successfully:', fileUrl);
     }
 
-    let imageUrl = null;
-    if (req.file) {
-      // In production, you'd upload to Supabase Storage or another cloud service
-      imageUrl = `/uploads/${req.file.filename}`;
+    // Get client_id from user's profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('client_id')
+      .eq('id', req.user.id)
+      .single();
+
+    if (profileError || !profile?.client_id) {
+      console.error('Client profile error:', profileError);
+      return res.status(403).json({ error: 'Client profile not found' });
     }
+
+    // Create request with correct column names
+    const insertData = {
+      client_id: profile.client_id,
+      from_user_id: req.user.id,          // ✅ Change from user_id to from_user_id
+      message,
+      content_type: content_type || 'post',
+      requirements: requirements || '',
+      image_url: fileUrl,                  // ✅ Use image_url (existing column)
+      status: 'pending_manager_review',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    console.log('Inserting request data:', insertData);
 
     const { data, error } = await supabase
       .from('requests')
-      .insert({
-        client_id: req.user.clientId,
-        from_user_id: req.user.id,
-        message,
-        content_type: content_type || 'post',
-        requirements: requirements || '',
-        image_url: imageUrl,
-        status: 'pending_manager_review'
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (error) {
+      console.error('Request creation error:', error);
       return res.status(500).json({ error: error.message });
     }
 
+    console.log('Request created successfully:', data.id);
     res.status(201).json({ request: data });
+
   } catch (error) {
     console.error('Create request error:', error);
     res.status(500).json({ error: 'Failed to create request' });
@@ -275,47 +312,78 @@ router.put('/:requestId/submit', authenticateUser, requireRole(['editor']), uplo
     const { requestId } = req.params;
     const { message } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
-    }
+    console.log('=== EDITOR SUBMIT DEBUG ===');
+    console.log('Request ID:', requestId);
+    console.log('Editor:', req.user.id);
+    console.log('File:', req.file);
+    console.log('Message:', message);
 
-    // Verify the request is assigned to this editor and is in a status that allows submission
+    // Check if request exists and is assigned to this editor
     const { data: request, error: requestError } = await supabase
       .from('requests')
       .select('*')
       .eq('id', requestId)
       .eq('assigned_editor_id', req.user.id)
-      .in('status', ['assigned_to_editor', 'manager_rejected', 'client_rejected']) // Allow resubmission
       .single();
 
     if (requestError || !request) {
-      return res.status(403).json({ error: 'Request not found or not available for submission' });
+      return res.status(404).json({ error: 'Request not found or not assigned to you' });
     }
 
     let completedWorkUrl = null;
+    
+    // Upload file to Supabase Storage if provided
     if (req.file) {
-      completedWorkUrl = `/uploads/${req.file.filename}`;
+      const fileName = `completed-work/${req.user.id}/${Date.now()}-${req.file.originalname}`;
+      
+      console.log('Uploading completed work to Supabase:', fileName);
+      console.log('File size:', req.file.size);
+      console.log('File type:', req.file.mimetype);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('request-files')
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('File upload error:', uploadError);
+        return res.status(500).json({ 
+          error: 'Failed to upload file',
+          details: uploadError.message 
+        });
+      }
+
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('request-files')
+        .getPublicUrl(fileName);
+
+      completedWorkUrl = urlData.publicUrl;
+      console.log('Completed work uploaded successfully:', completedWorkUrl);
     }
 
-    // Determine the next status based on current status
-    let nextStatus = 'submitted_for_review';
-    if (request.status === 'client_rejected') {
-      // If client rejected, send back to manager for review
-      nextStatus = 'submitted_for_review';
+    // Update the request with editor's submission
+    const updateData = {
+      status: 'submitted_for_review',
+      editor_message: message,
+      updated_at: new Date().toISOString(),
+      // Clear previous feedback when resubmitting
+      manager_feedback: null,
+      client_feedback: null
+    };
+
+    // Only update completed_work_url if a new file was uploaded
+    if (completedWorkUrl) {
+      updateData.completed_work_url = completedWorkUrl;
     }
 
-    // Update the request status and add editor's message
+    console.log('Updating request with data:', updateData);
+
     const { data, error } = await supabase
       .from('requests')
-      .update({
-        status: nextStatus,
-        editor_message: message,
-        completed_work_url: completedWorkUrl || request.completed_work_url, // Keep existing if no new file
-        updated_at: new Date().toISOString(),
-        // Clear previous feedback when resubmitting
-        manager_feedback: null,
-        client_feedback: null
-      })
+      .update(updateData)
       .eq('id', requestId)
       .select(`
         *,
@@ -330,10 +398,12 @@ router.put('/:requestId/submit', authenticateUser, requireRole(['editor']), uplo
       return res.status(500).json({ error: error.message });
     }
 
+    console.log('Successfully updated request. Completed work URL:', data.completed_work_url);
     res.json({ request: data });
+
   } catch (error) {
     console.error('Submit request error:', error);
-    res.status(500).json({ error: 'Failed to submit request' });
+    res.status(500).json({ error: 'Failed to submit work' });
   }
 });
 

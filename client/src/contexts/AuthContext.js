@@ -4,6 +4,10 @@ import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
+// Set the base URL for axios
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+axios.defaults.baseURL = API_BASE_URL;
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -44,10 +48,16 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, [token]);
 
+  // In your login function, make sure you're setting all necessary user properties
   const login = async (email, password) => {
     try {
       const response = await axios.post('/api/auth/login', { email, password });
       const { user, session } = response.data;
+      
+      // Make sure to set clientId if the user is a client
+      if (user.role === 'client' && user.client_id) {
+        user.clientId = user.client_id; // Add this for backward compatibility
+      }
       
       setUser(user);
       setToken(session.access_token);
@@ -56,6 +66,7 @@ export const AuthProvider = ({ children }) => {
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
       const message = error.response?.data?.error || 'Login failed';
       toast.error(message);
       return { success: false, error: message };
@@ -113,4 +124,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-}; 
+};

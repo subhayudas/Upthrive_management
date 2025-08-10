@@ -1,0 +1,10 @@
+[build]
+buildCommand = "cd server && npm install"
+
+[deploy]
+startCommand = "cd server && npm start"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[env]
+PORT = "5000"
