@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Check, XCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import WhatsAppButton from './WhatsAppButton';
+import { createWhatsAppMessage } from '../utils/whatsappUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -180,6 +182,45 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows="3"
                 placeholder="Any feedback or thanks for the team..."
+              />
+            </div>
+          )}
+
+          {/* WhatsApp notification sections */}
+          {action === 'approve' && request?.manager_phone && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-800 mb-2">
+                📱 Notify manager via WhatsApp:
+              </p>
+              <WhatsAppButton
+                phoneNumber={request.manager_phone}
+                message={createWhatsAppMessage.clientApproved(
+                  request.manager_name || 'Manager',
+                  request.assigned_editor?.name,
+                  request.from_user?.name,
+                  request.content_type
+                )}
+                recipientName={request.manager_name || 'Manager'}
+                className="w-full justify-center"
+              />
+            </div>
+          )}
+
+          {action === 'reject' && request?.assigned_editor?.phone_number && (
+            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
+              <p className="text-sm text-orange-800 mb-2">
+                📱 Notify editor via WhatsApp:
+              </p>
+              <WhatsAppButton
+                phoneNumber={request.assigned_editor.phone_number}
+                message={createWhatsAppMessage.clientRejected(
+                  request.assigned_editor.name,
+                  request.from_user?.name,
+                  request.content_type,
+                  feedback || 'Client requested changes'
+                )}
+                recipientName={request.assigned_editor.name}
+                className="w-full justify-center"
               />
             </div>
           )}

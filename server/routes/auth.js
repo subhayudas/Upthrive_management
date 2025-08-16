@@ -1,6 +1,23 @@
 const express = require('express');
-const { supabase, supabaseAdmin } = require('../config/supabase');
 const router = express.Router();
+
+// Import Supabase clients with error handling
+let supabase, supabaseAdmin;
+
+try {
+  const supabaseConfig = require('../config/supabase');
+  supabase = supabaseConfig.supabase;
+  supabaseAdmin = supabaseConfig.supabaseAdmin;
+  
+  if (!supabase || !supabaseAdmin) {
+    throw new Error('Supabase clients not properly initialized');
+  }
+  
+  console.log('✅ Supabase clients loaded successfully in auth.js');
+} catch (error) {
+  console.error('❌ Failed to load Supabase clients:', error.message);
+  throw error;
+}
 
 // Middleware to authenticate user
 const authenticateUser = async (req, res, next) => {
@@ -55,11 +72,27 @@ const authenticateUser = async (req, res, next) => {
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, role, name, clientId } = req.body;
+    console.log('=== REGISTRATION DEBUG ===');
+    console.log('supabaseAdmin:', typeof supabaseAdmin);
+    console.log('supabaseAdmin.auth:', typeof supabaseAdmin?.auth);
+    console.log('Request body:', req.body);
+    
+    const { email, password, role, name, clientId, phone } = req.body; // ✅ Add phone here
 
     // Validate required fields
     if (!email || !password || !role || !name) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validate phone number if provided
+    if (phone) {
+      const phoneRegex = /^\+[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(phone)) {
+        console.log('❌ Invalid phone number format:', phone);
+        return res.status(400).json({ 
+          error: 'Please enter a valid phone number with country code (e.g., +1234567890)' 
+        });
+      }
     }
 
     // Validate role
@@ -67,6 +100,14 @@ router.post('/register', async (req, res) => {
     if (!validRoles.includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
+
+    // Debug: Check supabaseAdmin before using it
+    if (!supabaseAdmin || !supabaseAdmin.auth) {
+      console.error('❌ supabaseAdmin or supabaseAdmin.auth is undefined');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    console.log('✅ Creating user with supabaseAdmin...');
 
     // Create user in Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -76,8 +117,11 @@ router.post('/register', async (req, res) => {
     });
 
     if (authError) {
+      console.error('❌ Auth error:', authError);
       return res.status(400).json({ error: authError.message });
     }
+
+    console.log('✅ User created successfully:', authData.user.id);
 
     let client_id = clientId;
 
@@ -88,12 +132,13 @@ router.post('/register', async (req, res) => {
         .insert({
           name,
           email,
-          company_name: name // You can add a company_name field to the form later
+          company_name: name
         })
         .select()
         .single();
 
       if (clientError) {
+        console.error('❌ Client creation error:', clientError);
         // Clean up auth user if client creation fails
         await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
         return res.status(400).json({ error: clientError.message });
@@ -102,7 +147,7 @@ router.post('/register', async (req, res) => {
       client_id = clientData.id;
     }
 
-    // Create profile
+    // Create profile WITH phone number
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .insert({
@@ -110,10 +155,12 @@ router.post('/register', async (req, res) => {
         email,
         name,
         role,
+        phone_number: phone || null, // ✅ Add phone_number here
         client_id: client_id
       });
 
     if (profileError) {
+      console.error('❌ Profile creation error:', profileError);
       // Clean up auth user and client if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       if (role === 'client' && client_id) {
@@ -122,6 +169,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: profileError.message });
     }
 
+    console.log('✅ Registration completed successfully');
+
     res.status(201).json({ 
       message: 'User created successfully',
       user: {
@@ -129,12 +178,13 @@ router.post('/register', async (req, res) => {
         email,
         name,
         role,
+        phone_number: phone || null, // ✅ Include phone in response
         clientId: client_id
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    console.error('❌ Registration error:', error);
+    res.status(500).json({ error: 'Registration failed: ' + error.message });
   }
 });
 
@@ -172,7 +222,8 @@ router.post('/login', async (req, res) => {
       email: profile.email,
       name: profile.name,
       role: profile.role,
-      client_id: profile.client_id, // Make sure this is included
+      phone_number: profile.phone_number, // ✅ Add phone_number here
+      client_id: profile.client_id,
       created_at: profile.created_at
     };
 
@@ -204,6 +255,7 @@ router.get('/profile', authenticateUser, async (req, res) => {
       email: profile.email,
       name: profile.name,
       role: profile.role,
+      phone_number: profile.phone_number, // ✅ Add phone_number here
       client_id: profile.client_id,
       created_at: profile.created_at
     };

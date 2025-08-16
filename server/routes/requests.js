@@ -150,24 +150,111 @@ router.get('/my-requests', authenticateUser, async (req, res) => {
 // Get all requests (managers only)
 router.get('/', authenticateUser, requireRole(['manager']), async (req, res) => {
   try {
-    const { data, error } = await supabase
+    console.log('🔍 Fetching all requests for manager...');
+    
+    // Get all requests first
+    const { data: requests, error } = await supabase
       .from('requests')
-      .select(`
-        *,
-        from_user:from_user_id (name, email),
-        to_user:to_user_id (name, email),
-        clients:client_id (name),
-        assigned_editor:assigned_editor_id (name, email)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
       return res.status(500).json({ error: error.message });
     }
 
-    res.json({ requests: data });
+    console.log('📊 Found', requests.length, 'requests');
+
+    // Get all unique user IDs we need to fetch
+    const userIds = new Set();
+    const clientIds = new Set();
+
+    requests.forEach(request => {
+      if (request.from_user_id) userIds.add(request.from_user_id);
+      if (request.to_user_id) userIds.add(request.to_user_id);
+      if (request.assigned_editor_id) userIds.add(request.assigned_editor_id);
+      if (request.client_id) clientIds.add(request.client_id);
+    });
+
+    console.log('📊 Fetching profiles for user IDs:', Array.from(userIds));
+
+    // Get all user profiles at once - WITH PHONE NUMBERS
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, name, email, phone_number, role, client_id')
+      .in('id', Array.from(userIds));
+
+    if (profilesError) {
+      console.error('❌ Profiles query error:', profilesError);
+    }
+
+    console.log('📱 Profiles fetched:', profiles?.map(p => ({
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      has_phone: !!p.phone_number,
+      phone_preview: p.phone_number ? `${p.phone_number.substring(0, 5)}...` : 'none'
+    })));
+
+    // Get all client info at once
+    const { data: clients } = await supabase
+      .from('clients')
+      .select('id, name')
+      .in('id', Array.from(clientIds));
+
+    // Get current manager info
+    const { data: currentManager } = await supabase
+      .from('profiles')
+      .select('name, phone_number')
+      .eq('id', req.user.id)
+      .single();
+
+    // Create lookup maps
+    const profileMap = profiles?.reduce((acc, profile) => {
+      acc[profile.id] = profile;
+      return acc;
+    }, {}) || {};
+
+    const clientMap = clients?.reduce((acc, client) => {
+      acc[client.id] = client;
+      return acc;
+    }, {}) || {};
+
+    // Enhance each request with the profile data
+    const enhancedRequests = requests.map(request => {
+      const fromUser = profileMap[request.from_user_id];
+      const enhancedRequest = {
+        ...request,
+        from_user: fromUser,
+        to_user: profileMap[request.to_user_id] || null,
+        assigned_editor: profileMap[request.assigned_editor_id] || null,
+        clients: clientMap[request.client_id] || null,
+        manager_name: currentManager?.name || 'Manager',
+        manager_phone: currentManager?.phone_number
+      };
+
+      // Debug log for the first few requests
+      if (requests.indexOf(request) < 3) {
+        console.log(`📱 Request ${request.id} from_user debug:`, {
+          from_user_id: request.from_user_id,
+          from_user_data: fromUser,
+          has_phone: !!fromUser?.phone_number
+        });
+      }
+
+      return enhancedRequest;
+    });
+
+    console.log('📱 Enhanced Requests - Sample client phones:', 
+      enhancedRequests.slice(0, 3).map(r => ({
+        id: r.id,
+        client_name: r.from_user?.name,
+        client_phone: r.from_user?.phone_number ? 'PRESENT' : 'MISSING'
+      }))
+    );
+
+    res.json({ requests: enhancedRequests });
   } catch (error) {
-    console.error('Get all requests error:', error);
+    console.error('❌ Get all requests error:', error);
     res.status(500).json({ error: 'Failed to get requests' });
   }
 });
@@ -185,7 +272,7 @@ router.put('/:requestId/assign', authenticateUser, requireRole(['manager']), asy
     // Verify the editor exists and is actually an editor
     const { data: editor, error: editorError } = await supabase
       .from('profiles')
-      .select('id, role')
+      .select('id, role, name, email, phone_number')
       .eq('id', editor_id)
       .eq('role', 'editor')
       .single();
@@ -200,15 +287,17 @@ router.put('/:requestId/assign', authenticateUser, requireRole(['manager']), asy
       .update({
         assigned_editor_id: editor_id,
         to_user_id: editor_id,
+        manager_id: req.user.id, // ✅ Store who assigned it
         status: 'assigned_to_editor',
         updated_at: new Date().toISOString()
       })
       .eq('id', requestId)
       .select(`
         *,
-        from_user:from_user_id (name, email),
-        assigned_editor:assigned_editor_id (name, email),
-        clients:client_id (name)
+        from_user:from_user_id (name, email, phone_number),
+        assigned_editor:assigned_editor_id (name, email, phone_number),
+        clients:client_id (name),
+        manager:manager_id (name, phone_number)
       `)
       .single();
 
@@ -229,7 +318,7 @@ router.get('/editors', authenticateUser, requireRole(['manager']), async (req, r
   try {
     const { data: editors, error } = await supabase
       .from('profiles')
-      .select('id, name, email')
+      .select('id, name, email, phone_number') // ✅ Add phone_number here
       .eq('role', 'editor')
       .order('name');
 
@@ -237,7 +326,7 @@ router.get('/editors', authenticateUser, requireRole(['manager']), async (req, r
       return res.status(500).json({ error: error.message });
     }
 
-    res.json({ editors });
+    res.json({ editors }); // ✅ This matches what AssignRequestModal expects
   } catch (error) {
     console.error('Get editors error:', error);
     res.status(500).json({ error: 'Failed to get editors' });
@@ -251,18 +340,26 @@ router.get('/my-tasks', authenticateUser, requireRole(['editor']), async (req, r
       .from('requests')
       .select(`
         *,
-        from_user:from_user_id (name, email),
-        clients:client_id (name)
+        from_user:from_user_id (name, email, phone_number),
+        clients:client_id (name),
+        manager_profile:manager_id (name, phone_number)
       `)
       .eq('assigned_editor_id', req.user.id)
-      .in('status', ['assigned_to_editor', 'manager_rejected', 'client_rejected']) // Added client_rejected
+      .in('status', ['assigned_to_editor', 'manager_rejected', 'client_rejected'])
       .order('created_at', { ascending: false });
 
     if (error) {
       return res.status(500).json({ error: error.message });
     }
 
-    res.json({ requests });
+    // Transform the data to include manager info in expected format
+    const transformedRequests = requests.map(request => ({
+      ...request,
+      manager_name: request.manager_profile?.name || 'Manager',
+      manager_phone: request.manager_profile?.phone_number
+    }));
+
+    res.json({ requests: transformedRequests });
   } catch (error) {
     console.error('Get tasks error:', error);
     res.status(500).json({ error: 'Failed to get tasks' });
@@ -411,7 +508,9 @@ router.put('/:requestId/submit', authenticateUser, requireRole(['editor']), uplo
 router.put('/:requestId/review', authenticateUser, requireRole(['manager']), async (req, res) => {
   try {
     const { requestId } = req.params;
-    const { action, feedback } = req.body; // action: 'approve' or 'reject'
+    const { action, feedback } = req.body;
+
+    console.log('🔍 Manager Review Debug - Start:', { requestId, action, managerId: req.user.id });
 
     if (!action || !['approve', 'reject'].includes(action)) {
       return res.status(400).json({ error: 'Invalid action. Must be approve or reject' });
@@ -421,7 +520,6 @@ router.put('/:requestId/review', authenticateUser, requireRole(['manager']), asy
       return res.status(400).json({ error: 'Feedback is required when rejecting' });
     }
 
-    // Get the current request
     const { data: request, error: requestError } = await supabase
       .from('requests')
       .select('*')
@@ -439,33 +537,96 @@ router.put('/:requestId/review', authenticateUser, requireRole(['manager']), asy
 
     if (action === 'approve') {
       updateData.status = 'manager_approved';
-      updateData.to_user_id = request.from_user_id; // Send to client for final approval
+      updateData.to_user_id = request.from_user_id;
     } else {
       updateData.status = 'manager_rejected';
       updateData.manager_feedback = feedback;
-      updateData.to_user_id = request.assigned_editor_id; // Send back to editor
+      updateData.to_user_id = request.assigned_editor_id;
     }
 
-    const { data, error } = await supabase
+    // Update the request first
+    const { data: updatedRequest, error } = await supabase
       .from('requests')
       .update(updateData)
       .eq('id', requestId)
-      .select(`
-        *,
-        from_user:from_user_id (name, email),
-        assigned_editor:assigned_editor_id (name, email),
-        clients:client_id (name)
-      `)
+      .select('*')
       .single();
 
     if (error) {
-      console.error('Review error:', error);
+      console.error('❌ Review error:', error);
       return res.status(500).json({ error: error.message });
     }
 
-    res.json({ request: data });
+    console.log('📱 Updated request from_user_id:', updatedRequest.from_user_id);
+
+    // Now get all the related data separately with proper error handling
+    const fromUserResult = await supabase
+      .from('profiles')
+      .select('id, name, email, phone_number, role, client_id')
+      .eq('id', updatedRequest.from_user_id)
+      .single();
+
+    console.log('📱 From User Query Result:', {
+      data: fromUserResult.data,
+      error: fromUserResult.error,
+      from_user_id: updatedRequest.from_user_id
+    });
+
+    const assignedEditorResult = updatedRequest.assigned_editor_id ? 
+      await supabase
+        .from('profiles')
+        .select('id, name, email, phone_number')
+        .eq('id', updatedRequest.assigned_editor_id)
+        .single() : 
+      { data: null, error: null };
+
+    const clientResult = await supabase
+      .from('clients')
+      .select('name')
+      .eq('id', updatedRequest.client_id)
+      .single();
+
+    const currentManagerResult = await supabase
+      .from('profiles')
+      .select('name, phone_number')
+      .eq('id', req.user.id)
+      .single();
+
+    console.log('📱 All Query Results:', {
+      fromUser: fromUserResult,
+      assignedEditor: assignedEditorResult,
+      client: clientResult,
+      currentManager: currentManagerResult
+    });
+
+    // Check for errors in individual queries
+    if (fromUserResult.error) {
+      console.error('❌ From User Query Error:', fromUserResult.error);
+    }
+
+    // Build the enhanced response
+    const enhancedData = {
+      ...updatedRequest,
+      from_user: fromUserResult.data,
+      assigned_editor: assignedEditorResult.data,
+      clients: clientResult.data,
+      manager_name: currentManagerResult.data?.name || 'Manager',
+      manager_phone: currentManagerResult.data?.phone_number
+    };
+
+    console.log('📱 Final Enhanced Response:', {
+      client_phone: enhancedData.from_user?.phone_number,
+      client_name: enhancedData.from_user?.name,
+      client_email: enhancedData.from_user?.email,
+      has_client_phone: !!enhancedData.from_user?.phone_number,
+      manager_name: enhancedData.manager_name,
+      editor_phone: enhancedData.assigned_editor?.phone_number,
+      from_user_full: enhancedData.from_user
+    });
+
+    res.json({ request: enhancedData });
   } catch (error) {
-    console.error('Review request error:', error);
+    console.error('❌ Review request error:', error);
     res.status(500).json({ error: 'Failed to review request' });
   }
 });
@@ -474,13 +635,12 @@ router.put('/:requestId/review', authenticateUser, requireRole(['manager']), asy
 router.put('/:requestId/client-review', authenticateUser, requireRole(['client']), async (req, res) => {
   try {
     const { requestId } = req.params;
-    const { action, feedback } = req.body; // action: 'approve' or 'reject'
+    const { action, feedback } = req.body;
 
     if (!action || !['approve', 'reject'].includes(action)) {
       return res.status(400).json({ error: 'Invalid action. Must be approve or reject' });
     }
 
-    // Get the current request
     const { data: request, error: requestError } = await supabase
       .from('requests')
       .select('*')
@@ -500,10 +660,10 @@ router.put('/:requestId/client-review', authenticateUser, requireRole(['client']
 
     if (action === 'approve') {
       updateData.status = 'client_approved';
-      updateData.to_user_id = null; // Request is complete
+      updateData.to_user_id = null;
     } else {
       updateData.status = 'client_rejected';
-      updateData.to_user_id = request.assigned_editor_id; // Send back to editor for revision
+      updateData.to_user_id = request.assigned_editor_id;
     }
 
     const { data, error } = await supabase
@@ -512,9 +672,10 @@ router.put('/:requestId/client-review', authenticateUser, requireRole(['client']
       .eq('id', requestId)
       .select(`
         *,
-        from_user:from_user_id (name, email),
-        assigned_editor:assigned_editor_id (name, email),
-        clients:client_id (name)
+        from_user:from_user_id (name, email, phone_number),
+        assigned_editor:assigned_editor_id (name, email, phone_number),
+        clients:client_id (name),
+        manager:manager_id (name, phone_number)
       `)
       .single();
 
@@ -527,6 +688,63 @@ router.put('/:requestId/client-review', authenticateUser, requireRole(['client']
   } catch (error) {
     console.error('Client review request error:', error);
     res.status(500).json({ error: 'Failed to review request' });
+  }
+});
+
+// Debugging endpoint to analyze phone number issues
+router.get('/debug-phones/:requestId', authenticateUser, async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    
+    // Get the basic request
+    const { data: basicRequest } = await supabase
+      .from('requests')
+      .select('*')
+      .eq('id', requestId)
+      .single();
+
+    // Get the from_user profile directly
+    const { data: fromUserProfile } = await supabase
+      .from('profiles')
+      .select('id, name, email, phone_number, role, client_id')
+      .eq('id', basicRequest.from_user_id)
+      .single();
+
+    // Get client profile by client_id
+    const { data: clientProfile } = await supabase
+      .from('profiles')
+      .select('id, name, email, phone_number, role')
+      .eq('client_id', basicRequest.client_id)
+      .eq('role', 'client')
+      .single();
+
+    // Get the full request with joins
+    const { data: fullRequest } = await supabase
+      .from('requests')
+      .select(`
+        *,
+        from_user:from_user_id (id, name, email, phone_number, role, client_id),
+        assigned_editor:assigned_editor_id (name, email, phone_number),
+        clients:client_id (name)
+      `)
+      .eq('id', requestId)
+      .single();
+
+    res.json({ 
+      debug: true,
+      basic_request: basicRequest,
+      from_user_profile: fromUserProfile,
+      client_profile: clientProfile,
+      full_request: fullRequest,
+      analysis: {
+        from_user_has_phone: !!fromUserProfile?.phone_number,
+        client_has_phone: !!clientProfile?.phone_number,
+        from_user_is_client: fromUserProfile?.role === 'client',
+        client_id_match: basicRequest.client_id === clientProfile?.client_id
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message, stack: error.stack });
   }
 });
 
