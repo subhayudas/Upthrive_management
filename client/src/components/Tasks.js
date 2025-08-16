@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Send, Clock, AlertCircle, CheckCircle, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
+import WhatsAppButton from './WhatsAppButton';
+import { createWhatsAppMessage } from '../utils/whatsappUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -17,15 +19,9 @@ const Tasks = () => {
   });
   const [selectedFile, setSelectedFile] = useState(null);
 
-  useEffect(() => {
-    if (isEditor || isManager) {
-      fetchTasks();
-    }
-  }, [isEditor, isManager]);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
-      console.log('Fetching tasks for editor:', user.id); // Debug log
+      console.log('Fetching tasks for editor:', user.id);
       
       const response = await fetch(`${API_BASE_URL}/api/requests/my-tasks`, {
         headers: {
@@ -35,10 +31,10 @@ const Tasks = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Tasks data received:', data); // Debug log
-        console.log('First task completed_work_url:', data.requests?.[0]?.completed_work_url); // Debug log
+        console.log('Tasks data received:', data);
+        console.log('First task completed_work_url:', data.requests?.[0]?.completed_work_url);
         
-        setTasks(data.requests || []); // Ensure it's an array
+        setTasks(data.requests || []);
       } else {
         throw new Error('Failed to fetch tasks');
       }
@@ -48,7 +44,13 @@ const Tasks = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    if (isEditor || isManager) {
+      fetchTasks();
+    }
+  }, [isEditor, isManager, fetchTasks]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -295,34 +297,71 @@ const Tasks = () => {
                   onChange={(e) => setSubmitData({ ...submitData, message: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows="4"
-                  placeholder="Describe the work completed, any changes made, or notes for the manager..."
+                  placeholder="Describe what you've completed and any important notes..."
                   required
                 />
               </div>
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Upload Completed Work (Optional)
+                  Upload Completed Work
                 </label>
                 <input
                   type="file"
                   onChange={handleFileChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  accept="image/*,video/*" // ✅ Accept both images and videos
+                  accept="image/*,video/*"
                 />
                 {selectedFile && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    Selected: {selectedFile.name}
-                  </p>
+                  <p className="text-sm text-gray-500 mt-1">Selected: {selectedFile.name}</p>
                 )}
               </div>
+
+              {/* WhatsApp notification section */}
+              {selectedTask.manager_phone && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-sm text-green-800 mb-2">
+                    📱 Notify manager via WhatsApp:
+                  </p>
+                  {/* Add debug info */}
+                  {console.log('🔍 WhatsApp Debug:', {
+                    manager_phone: selectedTask.manager_phone,
+                    manager_name: selectedTask.manager_name,
+                    client_name: selectedTask.clients?.name,
+                    content_type: selectedTask.content_type,
+                    message: submitData.message
+                  })}
+                  <WhatsAppButton
+                    phoneNumber={selectedTask.manager_phone}
+                    message={createWhatsAppMessage.submitForReview(
+                      selectedTask.manager_name || 'Manager',
+                      selectedTask.clients?.name,
+                      selectedTask.content_type,
+                      submitData.message || 'Work completed'
+                    )}
+                    recipientName={selectedTask.manager_name || 'Manager'}
+                    className="w-full justify-center"
+                  />
+                </div>
+              )}
+
+              {/* Also add debug for when manager_phone is missing */}
+              {!selectedTask.manager_phone && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Manager phone number not available for WhatsApp notification
+                  </p>
+                  {console.log('❌ Missing manager phone:', selectedTask)}
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+                  disabled={loading}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Submit Work
+                  {loading ? 'Submitting...' : 'Submit Work'}
                 </button>
                 <button
                   type="button"

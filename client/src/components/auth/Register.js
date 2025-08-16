@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../contexts/AuthContext';
-import { Eye, EyeOff, Mail, Lock, User, Building } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Building, Phone } from 'lucide-react'; // ✅ Add Phone import
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -49,6 +49,7 @@ const Register = () => {
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
+            {/* Name Field */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                 Full Name
@@ -77,6 +78,7 @@ const Register = () => {
               )}
             </div>
 
+            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
@@ -105,6 +107,39 @@ const Register = () => {
               )}
             </div>
 
+            {/* ✅ NEW: Phone Number Field */}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                Phone Number
+              </label>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  className={`input-field pl-10 ${errors.phone ? 'border-red-500' : ''}`}
+                  placeholder="+1234567890"
+                  {...register('phone', {
+                    required: 'Phone number is required',
+                    pattern: {
+                      value: /^\+[1-9]\d{1,14}$/,
+                      message: 'Please enter a valid phone number with country code (e.g., +1234567890)'
+                    }
+                  })}
+                />
+              </div>
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                Include country code (e.g., +1 for US, +91 for India)
+              </p>
+            </div>
+
+            {/* Role Field */}
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700">
                 Role
@@ -131,6 +166,7 @@ const Register = () => {
               )}
             </div>
 
+            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -170,6 +206,7 @@ const Register = () => {
               )}
             </div>
 
+            {/* Confirm Password Field */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                 Confirm Password
@@ -215,4 +252,4 @@ const Register = () => {
   );
 };
 
-export default Register; 
+export default Register;

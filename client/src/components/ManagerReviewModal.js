@@ -1,20 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Check, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import WhatsAppButton from './WhatsAppButton';
+import { createWhatsAppMessage } from '../utils/whatsappUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-const ManagerReviewModal = ({ request, isOpen, onClose, onReview }) => {
-  console.log('=== MANAGER REVIEW MODAL DEBUG ===');
-  console.log('Request:', request);
-  console.log('Completed work URL:', request?.completed_work_url);
-  console.log('Editor message:', request?.editor_message);
-  console.log('Request status:', request?.status);
-  console.log('====================================');
-
+const ManagerReviewModal = ({ request: initialRequest, isOpen, onClose, onReview }) => {
   const [action, setAction] = useState('');
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
+  const [request, setRequest] = useState(initialRequest);
+
+  // Fetch enhanced request data when modal opens
+  useEffect(() => {
+    if (isOpen && initialRequest?.id) {
+      fetchEnhancedRequestData();
+    }
+  }, [isOpen, initialRequest?.id]);
+
+  const fetchEnhancedRequestData = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/requests/debug-phones/${initialRequest.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const enhancedRequest = {
+          ...initialRequest,
+          from_user: data.from_user_profile,
+          assigned_editor: data.full_request?.assigned_editor,
+          clients: data.full_request?.clients
+        };
+        setRequest(enhancedRequest);
+      } else {
+        setRequest(initialRequest);
+      }
+    } catch (error) {
+      console.error('Error fetching enhanced request data:', error);
+      setRequest(initialRequest);
+    }
+  };
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setAction('');
+      setFeedback('');
+      setRequest(initialRequest);
+    }
+  }, [isOpen, initialRequest]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,18 +150,10 @@ const ManagerReviewModal = ({ request, isOpen, onClose, onReview }) => {
           )}
 
           <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-            <div>
-              <strong>Client:</strong> {request?.clients?.name}
-            </div>
-            <div>
-              <strong>Editor:</strong> {request?.assigned_editor?.name}
-            </div>
-            <div>
-              <strong>Content Type:</strong> {request?.content_type}
-            </div>
-            <div>
-              <strong>Submitted:</strong> {new Date(request?.updated_at).toLocaleDateString()}
-            </div>
+            <div><strong>Client:</strong> {request?.clients?.name}</div>
+            <div><strong>Editor:</strong> {request?.assigned_editor?.name}</div>
+            <div><strong>Content Type:</strong> {request?.content_type}</div>
+            <div><strong>Submitted:</strong> {new Date(request?.updated_at).toLocaleDateString()}</div>
           </div>
         </div>
 
@@ -133,29 +163,35 @@ const ManagerReviewModal = ({ request, isOpen, onClose, onReview }) => {
               Decision *
             </label>
             <div className="space-y-2">
-              <label className="flex items-center">
+              <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition-colors">
                 <input
                   type="radio"
                   name="action"
                   value="approve"
                   checked={action === 'approve'}
                   onChange={(e) => setAction(e.target.value)}
-                  className="mr-2"
+                  className="mr-3"
                 />
-                <Check className="w-4 h-4 text-green-600 mr-1" />
-                Approve - Send to client for final approval
+                <Check className="w-5 h-5 text-green-600 mr-2" />
+                <div>
+                  <div className="font-medium text-green-800">Approve</div>
+                  <div className="text-sm text-green-600">Send to client for final approval</div>
+                </div>
               </label>
-              <label className="flex items-center">
+              <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-red-50 transition-colors">
                 <input
                   type="radio"
                   name="action"
                   value="reject"
                   checked={action === 'reject'}
                   onChange={(e) => setAction(e.target.value)}
-                  className="mr-2"
+                  className="mr-3"
                 />
-                <XCircle className="w-4 h-4 text-red-600 mr-1" />
-                Reject - Send back to editor with feedback
+                <XCircle className="w-5 h-5 text-red-600 mr-2" />
+                <div>
+                  <div className="font-medium text-red-800">Reject</div>
+                  <div className="text-sm text-red-600">Send back to editor with feedback</div>
+                </div>
               </label>
             </div>
           </div>
@@ -172,6 +208,44 @@ const ManagerReviewModal = ({ request, isOpen, onClose, onReview }) => {
                 rows="4"
                 placeholder="Explain what needs to be changed or improved..."
                 required={action === 'reject'}
+              />
+            </div>
+          )}
+
+          {/* WhatsApp notification sections */}
+          {action === 'approve' && request?.from_user?.phone_number && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-800 mb-2">
+                📱 Notify client via WhatsApp:
+              </p>
+              <WhatsAppButton
+                phoneNumber={request.from_user.phone_number}
+                message={createWhatsAppMessage.approveForClient(
+                  request.from_user.name,
+                  request.content_type,
+                  request.manager_name || 'Manager'
+                )}
+                recipientName={request.from_user.name}
+                className="w-full justify-center"
+              />
+            </div>
+          )}
+
+          {action === 'reject' && request?.assigned_editor?.phone_number && (
+            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
+              <p className="text-sm text-orange-800 mb-2">
+                📱 Notify editor via WhatsApp:
+              </p>
+              <WhatsAppButton
+                phoneNumber={request.assigned_editor.phone_number}
+                message={createWhatsAppMessage.rejectToEditor(
+                  request.assigned_editor.name,
+                  request.clients?.name,
+                  request.content_type,
+                  feedback || 'Please make revisions'
+                )}
+                recipientName={request.assigned_editor.name}
+                className="w-full justify-center"
               />
             </div>
           )}
