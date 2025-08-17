@@ -154,9 +154,22 @@ const Requests = () => {
   };
 
   const handleClientReviewClick = (request) => {
-    console.log('Client review clicked for request:', request.id);
+    console.log('🔍 CLIENT REVIEW DEBUG:', {
+      requestId: request.id,
+      status: request.status,
+      modalOpen: clientReviewModalOpen,
+      selectedRequest: selectedRequestForClientReview?.id,
+      userAgent: navigator.userAgent,
+      isMobile: window.innerWidth < 768
+    });
+    
     setSelectedRequestForClientReview(request);
     setClientReviewModalOpen(true);
+    
+    console.log('✅ Modal state updated for mobile:', {
+      modalShouldBeOpen: true,
+      selectedRequestId: request.id
+    });
   };
 
   const handleClientReviewComplete = (updatedRequest) => {
@@ -279,41 +292,82 @@ const Requests = () => {
   };
 
   const renderRequestActions = (request) => {
+    const isMobile = window.innerWidth < 768;
+    
     return (
-      <div className="flex gap-2">
-        {/* Manager actions */}
+      <div className="flex gap-2 flex-wrap">
+        {/* Manager actions - Mobile Optimized */}
         {isManager && request.status === 'pending_manager_review' && (
           <button
-            onClick={() => handleAssignClick(request)}
-            className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 flex items-center gap-1"
+            onClick={isMobile ? (e) => handleAssignClickMobile(e, request) : () => handleAssignClick(request)}
+            onTouchStart={() => console.log('👆 Assign button touched')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium shadow-lg touch-manipulation"
+            style={{ minWidth: '48px', minHeight: '48px' }}
           >
             <UserPlus className="w-4 h-4" />
-            Assign
-          </button>
-        )}
-        {isManager && request.status === 'submitted_for_review' && (
-          <button
-            onClick={() => handleReviewClick(request)}
-            className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 flex items-center gap-1"
-          >
-            <Eye className="w-4 h-4" />
-            Review
+            <span className="hidden sm:inline">Assign to Editor</span>
+            <span className="sm:hidden">Assign</span>
           </button>
         )}
         
-        {/* Client actions - Fixed Mobile Version */}
-        {isClient && request.status === 'manager_approved' && (
+        {isManager && request.status === 'submitted_for_review' && (
           <button
-            onClick={() => handleClientReviewClick(request)}
-            className="bg-green-600 text-white px-4 py-3 rounded-lg text-sm hover:bg-green-700 flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium shadow-lg"
-            style={{ minWidth: '44px', minHeight: '44px' }}
+            onClick={isMobile ? (e) => handleReviewClickMobile(e, request) : () => handleReviewClick(request)}
+            onTouchStart={() => console.log('👆 Review button touched')}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium shadow-lg touch-manipulation"
+            style={{ minWidth: '48px', minHeight: '48px' }}
           >
             <Eye className="w-4 h-4" />
-            <span>Review Work</span>
+            <span className="hidden sm:inline">Review Work</span>
+            <span className="sm:hidden">Review</span>
+          </button>
+        )}
+        
+        {/* Client actions - Mobile Optimized */}
+        {isClient && request.status === 'manager_approved' && (
+          <button
+            onClick={isMobile ? (e) => handleClientReviewClickMobile(e, request) : () => handleClientReviewClick(request)}
+            onTouchStart={() => console.log('👆 Client review button touched')}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium shadow-lg touch-manipulation"
+            style={{ minWidth: '48px', minHeight: '48px' }}
+          >
+            <Eye className="w-4 h-4" />
+            <span className="hidden sm:inline">Review Final Work</span>
+            <span className="sm:hidden">Review</span>
           </button>
         )}
       </div>
     );
+  };
+
+  // Mobile-optimized assign handler
+  const handleAssignClickMobile = (e, request) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('📱 MOBILE ASSIGN CLICKED:', request.id);
+    
+    setSelectedRequest(request);
+    setAssignModalOpen(true);
+  };
+
+  // Mobile-optimized client review handler
+  const handleClientReviewClickMobile = (e, request) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('📱 MOBILE CLIENT REVIEW CLICKED:', request.id);
+    
+    setSelectedRequestForClientReview(request);
+    setClientReviewModalOpen(true);
+  };
+
+  // Mobile-optimized manager review handler
+  const handleReviewClickMobile = (e, request) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('📱 MOBILE MANAGER REVIEW CLICKED:', request.id);
+    
+    setSelectedRequestForReview(request);
+    setReviewModalOpen(true);
   };
 
   if (loading) {
@@ -700,6 +754,54 @@ const Requests = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Client Review Modal - Fixed Mobile Version */}
+        {clientReviewModalOpen && selectedRequestForClientReview && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+            <ClientReviewModal
+              request={selectedRequestForClientReview}
+              isOpen={clientReviewModalOpen}
+              onClose={() => {
+                console.log('🔧 Closing client review modal (mobile fix)');
+                setClientReviewModalOpen(false);
+                setSelectedRequestForClientReview(null);
+              }}
+              onReview={handleClientReviewComplete}
+            />
+          </div>
+        )}
+
+        {/* Assign Modal - Fixed Mobile Version */}
+        {assignModalOpen && selectedRequest && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+            <AssignRequestModal
+              isOpen={assignModalOpen}
+              onClose={() => {
+                console.log('🔧 Closing assign modal (mobile fix)');
+                setAssignModalOpen(false);
+                setSelectedRequest(null);
+              }}
+              request={selectedRequest}
+              onAssign={handleAssignComplete}
+            />
+          </div>
+        )}
+
+        {/* Manager Review Modal - Fixed Mobile Version */}
+        {reviewModalOpen && selectedRequestForReview && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+            <ManagerReviewModal
+              request={selectedRequestForReview}
+              isOpen={reviewModalOpen}
+              onClose={() => {
+                console.log('🔧 Closing manager review modal (mobile fix)');
+                setReviewModalOpen(false);
+                setSelectedRequestForReview(null);
+              }}
+              onReview={handleReviewComplete}
+            />
           </div>
         )}
       </div>

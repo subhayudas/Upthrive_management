@@ -222,41 +222,78 @@
   }
 }
 
-@media (max-width: 640px) {
-  /* Extra small screens */
-  .review-modal {
-    @apply max-w-xs mx-1;
+/* Add these mobile touch interaction fixes */
+
+@media (max-width: 768px) {
+  /* Touch-friendly buttons */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
   }
   
-  .modal-padding {
-    @apply p-2;
+  /* Mobile button styles */
+  .mobile-action-btn {
+    min-height: 48px !important;
+    min-width: 48px !important;
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.2s ease !important;
   }
   
-  .review-section {
-    @apply space-y-2;
+  .mobile-action-btn:active {
+    transform: scale(0.98) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
   }
   
-  .container {
-    @apply px-3;
+  /* Request card mobile optimizations */
+  .request-card-mobile {
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+    border-radius: 12px !important;
   }
   
-  /* Bottom navigation spacing */
-  .main-content {
-    @apply pb-20;
+  /* Modal optimizations for mobile */
+  .modal-mobile {
+    margin: 8px !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100vh - 16px) !important;
+  }
+  
+  .modal-content-mobile {
+    padding: 16px !important;
+    font-size: 14px !important;
+  }
+  
+  /* Button group mobile layout */
+  .button-group-mobile {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  
+  .button-group-mobile button {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 
-/* Extra specific styles for very small screens */
+/* Very small screens */
 @media (max-width: 480px) {
-  .client-review-modal {
-    @apply max-w-xs mx-1;
+  .mobile-action-btn {
+    font-size: 12px !important;
+    padding: 10px 12px !important;
   }
   
-  .review-modal-padding {
-    @apply p-2;
-  }
-  
-  .review-button-small {
-    @apply text-xs py-3 px-3;
+  .modal-mobile {
+    margin: 4px !important;
+    max-width: calc(100vw - 8px) !important;
+    max-height: calc(100vh - 8px) !important;
   }
 }

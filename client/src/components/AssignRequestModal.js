@@ -83,39 +83,41 @@ const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Assign Request to Editor</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <div className="bg-white rounded-lg md:rounded-xl w-full max-w-xs sm:max-w-sm md:max-w-md max-h-[95vh] overflow-y-auto mx-2">
+      <div className="flex justify-between items-center p-3 md:p-6 border-b border-gray-200">
+        <h2 className="text-base md:text-lg font-semibold">Assign Request to Editor</h2>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
 
-        <div className="mb-4">
-          <p className="text-sm text-gray-600 mb-2">
+      <div className="p-3 md:p-6 space-y-3 md:space-y-4">
+        {/* Request Details */}
+        <div className="bg-gray-50 rounded-lg p-3">
+          <h3 className="font-medium text-gray-900 mb-2 text-sm">Request Details:</h3>
+          <p className="text-xs md:text-sm text-gray-600 mb-2">
             <strong>Request:</strong> {request?.message}
           </p>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-xs md:text-sm text-gray-600 mb-2">
             <strong>Content Type:</strong> {request?.content_type}
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-xs md:text-sm text-gray-600">
             <strong>Client:</strong> {request?.clients?.name}
           </p>
         </div>
 
-        <form onSubmit={handleAssign}>
-          <div className="mb-4">
+        <form onSubmit={handleAssign} className="space-y-4">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Editor
             </label>
             <select
               value={selectedEditor}
               onChange={(e) => handleEditorChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               required
             >
               <option value="">Choose an editor...</option>
@@ -127,10 +129,10 @@ const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
             </select>
           </div>
 
-          {/* WhatsApp notification section */}
+          {/* WhatsApp notification section - Mobile optimized */}
           {selectedEditorData && selectedEditorData.phone_number && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-800 mb-2">
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-xs text-green-800 mb-2">
                 📱 Notify {selectedEditorData.name} via WhatsApp:
               </p>
               <WhatsAppButton
@@ -142,16 +144,16 @@ const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
                   request?.message
                 )}
                 recipientName={selectedEditorData.name}
-                className="w-full justify-center"
+                className="w-full justify-center text-xs"
               />
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 text-sm font-medium min-h-[48px]"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -165,7 +167,7 @@ const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
+              className="w-full bg-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-400 text-sm font-medium min-h-[48px]"
             >
               Cancel
             </button>
