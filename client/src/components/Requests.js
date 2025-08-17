@@ -154,6 +154,7 @@ const Requests = () => {
   };
 
   const handleClientReviewClick = (request) => {
+    console.log('Client review clicked for request:', request.id);
     setSelectedRequestForClientReview(request);
     setClientReviewModalOpen(true);
   };
@@ -300,15 +301,15 @@ const Requests = () => {
           </button>
         )}
         
-        {/* Client actions - Mobile Optimized */}
+        {/* Client actions - Fixed Mobile Version */}
         {isClient && request.status === 'manager_approved' && (
           <button
             onClick={() => handleClientReviewClick(request)}
-            className="bg-green-600 text-white px-3 py-2 rounded text-xs md:text-sm hover:bg-green-700 flex items-center gap-1 min-h-[44px] mobile-btn"
+            className="bg-green-600 text-white px-4 py-3 rounded-lg text-sm hover:bg-green-700 flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium shadow-lg"
+            style={{ minWidth: '44px', minHeight: '44px' }}
           >
-            <Eye className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="hidden sm:inline">Review Final Work</span>
-            <span className="sm:hidden">Review</span>
+            <Eye className="w-4 h-4" />
+            <span>Review Work</span>
           </button>
         )}
       </div>
