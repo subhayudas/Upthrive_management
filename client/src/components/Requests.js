@@ -300,14 +300,15 @@ const Requests = () => {
           </button>
         )}
         
-        {/* Client actions */}
+        {/* Client actions - Mobile Optimized */}
         {isClient && request.status === 'manager_approved' && (
           <button
             onClick={() => handleClientReviewClick(request)}
-            className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 flex items-center gap-1"
+            className="bg-green-600 text-white px-3 py-2 rounded text-xs md:text-sm hover:bg-green-700 flex items-center gap-1 min-h-[44px] mobile-btn"
           >
-            <Eye className="w-4 h-4" />
-            Review Final Work
+            <Eye className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Review Final Work</span>
+            <span className="sm:hidden">Review</span>
           </button>
         )}
       </div>

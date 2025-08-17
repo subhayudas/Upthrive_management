@@ -147,10 +147,55 @@
   .mobile-btn {
     @apply min-h-[44px] min-w-[44px] text-sm;
   }
+  
+  /* Review modal specific styles */
+  .review-modal {
+    @apply w-full max-w-sm mx-2;
+  }
+  
+  .review-modal-content {
+    @apply p-3 space-y-3;
+  }
+  
+  .review-radio-option {
+    @apply p-2 text-sm;
+  }
+  
+  .review-textarea {
+    @apply text-sm p-2;
+  }
+  
+  .review-button {
+    @apply py-3 px-4 text-sm min-h-[48px];
+  }
+  
+  /* WhatsApp button mobile styles */
+  .whatsapp-btn-mobile {
+    @apply text-xs px-2 py-2;
+  }
+  
+  /* Modal video/image mobile styles */
+  .modal-media-mobile {
+    max-height: 180px !important;
+    width: 100%;
+    object-fit: contain;
+  }
 }
 
-/* Ensure proper spacing on mobile */
 @media (max-width: 640px) {
+  /* Extra small screens */
+  .review-modal {
+    @apply max-w-xs mx-1;
+  }
+  
+  .modal-padding {
+    @apply p-2;
+  }
+  
+  .review-section {
+    @apply space-y-2;
+  }
+  
   .container {
     @apply px-3;
   }
