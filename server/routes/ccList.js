@@ -96,7 +96,8 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const { data, error } = await supabase
+    // Create CC list item
+    const { data: ccItem, error: ccError } = await supabase
       .from('cc_list')
       .insert({
         client_id: clientId,
@@ -113,12 +114,34 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
       .select()
       .single();
 
-    if (error) {
-      console.error('CC Item create error:', error);
-      return res.status(500).json({ error: error.message });
+    if (ccError) {
+      console.error('CC Item create error:', ccError);
+      return res.status(500).json({ error: ccError.message });
     }
 
-    res.status(201).json({ ccItem: data });
+    // Create corresponding request
+    const { data: request, error: reqError } = await supabase
+      .from('requests')
+      .insert({
+        client_id: clientId,
+        from_user_id: req.user.id,
+        message: description,
+        content_type: content_type || 'post',
+        status: 'pending_manager_review',
+        cc_list_id: ccItem.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (reqError) {
+      console.error('Request create error:', reqError);
+      // Optionally: Rollback the CC item if request creation fails
+      return res.status(500).json({ error: reqError.message });
+    }
+
+    res.status(201).json({ ccItem, request });
   } catch (error) {
     console.error('Create CC item error:', error);
     res.status(500).json({ error: 'Failed to create CC item' });
