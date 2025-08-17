@@ -104,3 +104,59 @@
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(to bottom, #4f46e5, #7c3aed);
 }
+
+/* Add these mobile-specific styles */
+
+@media (max-width: 768px) {
+  .status-badge {
+    @apply px-2 py-1 text-xs;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 text-sm;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 text-sm;
+  }
+  
+  .input-field {
+    @apply text-sm;
+  }
+  
+  /* Mobile modal adjustments */
+  .modal-content {
+    @apply mx-2 my-4 max-h-[85vh];
+  }
+  
+  /* Mobile card spacing */
+  .mobile-card {
+    @apply p-3 rounded-lg;
+  }
+  
+  /* Mobile text sizes */
+  .mobile-title {
+    @apply text-lg font-semibold;
+  }
+  
+  .mobile-subtitle {
+    @apply text-sm text-gray-600;
+  }
+  
+  /* Touch-friendly buttons */
+  .mobile-btn {
+    @apply min-h-[44px] min-w-[44px] text-sm;
+  }
+}
+
+/* Ensure proper spacing on mobile */
+@media (max-width: 640px) {
+  .container {
+    @apply px-3;
+  }
+  
+  /* Bottom navigation spacing */
+  .main-content {
+    @apply pb-20;
+  }
+}

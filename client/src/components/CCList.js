@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Plus, Edit, Trash2, FileText, Calendar, Clock, Star, Zap, Target } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText, Calendar, Clock, Star, Zap, Target, X, Eye } from 'lucide-react'; // Add X and Eye icons
 import toast from 'react-hot-toast';
 
 const CCList = () => {
@@ -9,6 +9,8 @@ const CCList = () => {
   const [ccList, setCcList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null); // Add state for selected item
+  const [showDetailModal, setShowDetailModal] = useState(false); // Add state for detail modal
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -181,6 +183,18 @@ const CCList = () => {
     }
   };
 
+  // Add function to handle item click
+  const handleViewDetails = (item) => {
+    setSelectedItem(item);
+    setShowDetailModal(true);
+  };
+
+  // Add function to close detail modal
+  const closeDetailModal = () => {
+    setSelectedItem(null);
+    setShowDetailModal(false);
+  };
+
   // Add this useEffect for debugging client users
   useEffect(() => {
     console.log('=== CC LIST CLIENT DEBUG ===');
@@ -256,6 +270,31 @@ const CCList = () => {
     return styles[priority] || styles.medium;
   };
 
+  // Get status style function
+  const getStatusStyle = (status) => {
+    const styles = {
+      active: { 
+        bg: 'bg-green-100', 
+        text: 'text-green-700',
+        icon: '✅',
+        badge: 'bg-green-500'
+      },
+      inactive: { 
+        bg: 'bg-gray-100', 
+        text: 'text-gray-700',
+        icon: '⏸️',
+        badge: 'bg-gray-500'
+      },
+      completed: { 
+        bg: 'bg-blue-100', 
+        text: 'text-blue-700',
+        icon: '🎉',
+        badge: 'bg-blue-500'
+      }
+    };
+    return styles[status] || styles.active;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
@@ -274,25 +313,24 @@ const CCList = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
-        <div className="mb-8">
-          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="mb-6 md:mb-8">
+          <div className="bg-white/70 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-xl border border-white/20 p-4 md:p-8">
+            <div className="flex flex-col gap-4">
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
                   Content Calendar
                 </h1>
-                <p className="text-slate-600 mt-2 font-medium">
-                  Plan, organize, and track your content strategy
+                <p className="text-slate-600 mt-1 md:mt-2 font-medium text-sm md:text-base">
+                  Plan and organize your social media content strategy
                 </p>
               </div>
               {(isManager || user.role === 'client') && (
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+                  className="self-start group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2 text-sm md:text-base"
                 >
-                  <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-200" />
-                  Create Content
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-200"></div>
+                  <Plus className="h-4 w-4 md:h-5 md:w-5 group-hover:rotate-90 transition-transform duration-200" />
+                  Add Content
                 </button>
               )}
             </div>
@@ -441,29 +479,31 @@ const CCList = () => {
           </div>
         )}
 
-        {/* Content Calendar Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Content Calendar Grid - Mobile Optimized */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 pb-20 md:pb-0">
           {ccList.map((item) => {
             const contentStyle = getContentTypeStyle(item.content_type);
             const priorityStyle = getPriorityStyle(item.priority);
+            const statusStyle = getStatusStyle(item.status);
             const ContentIcon = contentStyle.icon;
             const PriorityIcon = priorityStyle.icon;
 
             return (
               <div 
                 key={item.id} 
-                className={`group relative ${contentStyle.bg} ${contentStyle.border} border-2 rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 overflow-hidden`}
+                className={`group relative ${contentStyle.bg} ${contentStyle.border} border-2 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 overflow-hidden cursor-pointer`}
+                onClick={() => handleViewDetails(item)}
               >
                 {/* Background Pattern */}
-                <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
+                <div className="absolute top-0 right-0 w-24 h-24 md:w-32 md:h-32 opacity-5">
                   <ContentIcon className="w-full h-full" />
                 </div>
                 
                 {/* Header */}
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 bg-gradient-to-r ${contentStyle.gradient} rounded-xl flex items-center justify-center shadow-lg`}>
-                      <ContentIcon className="h-6 w-6 text-white" />
+                <div className="flex justify-between items-start mb-3 md:mb-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className={`w-8 h-8 md:w-12 md:h-12 bg-gradient-to-r ${contentStyle.gradient} rounded-lg md:rounded-xl flex items-center justify-center shadow-lg`}>
+                      <ContentIcon className="h-4 w-4 md:h-6 md:w-6 text-white" />
                     </div>
                     <div>
                       <span className={`text-xs font-bold uppercase tracking-wider ${contentStyle.text}`}>
@@ -473,53 +513,172 @@ const CCList = () => {
                   </div>
                   
                   {/* Priority Badge */}
-                  <div className={`flex items-center gap-1 px-3 py-1 ${priorityStyle.bg} ${priorityStyle.text} rounded-full text-xs font-bold shadow-lg ${priorityStyle.glow} shadow-lg`}>
+                  <div className={`flex items-center gap-1 px-2 md:px-3 py-1 ${priorityStyle.bg} ${priorityStyle.text} rounded-full text-xs font-bold shadow-lg`}>
                     <PriorityIcon className="w-3 h-3" />
-                    {item.priority}
+                    <span className="hidden md:inline">{item.priority}</span>
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="space-y-3">
-                  <h3 className="font-bold text-slate-800 text-lg leading-tight group-hover:text-slate-900 transition-colors">
+                <div className="space-y-2 md:space-y-3">
+                  <h3 className="font-bold text-slate-800 text-base md:text-lg leading-tight group-hover:text-slate-900 transition-colors">
                     {item.title}
                   </h3>
                   
-                  <p className="text-slate-600 text-sm leading-relaxed line-clamp-3">
+                  <p className="text-slate-600 text-xs md:text-sm leading-relaxed line-clamp-2">
                     {item.description}
                   </p>
-                  
-                  {item.requirements && (
-                    <div className="bg-white/60 rounded-lg p-3 border border-white/40">
-                      <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">
-                        Requirements
-                      </p>
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        {item.requirements}
-                      </p>
-                    </div>
-                  )}
+
+                  {/* Status Badge */}
+                  <div className={`inline-flex items-center gap-2 px-2 md:px-3 py-1 ${statusStyle.bg} ${statusStyle.text} rounded-full text-xs font-bold`}>
+                    <span>{statusStyle.icon}</span>
+                    {item.status}
+                  </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-between items-center mt-6 pt-4 border-t border-white/30">
+                <div className="flex justify-between items-center mt-4 md:mt-6 pt-3 md:pt-4 border-t border-white/30">
                   <div className="text-xs text-slate-500 font-medium">
-                    Created {new Date(item.created_at).toLocaleDateString()}
+                    {new Date(item.created_at).toLocaleDateString()}
                   </div>
                   
-                  {(isManager || user.role === 'client') && ( // Editors should NOT see delete button
+                  <div className="flex gap-1 md:gap-2">
                     <button
-                      onClick={() => handleDelete(item.id)}
-                      className="w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg flex items-center justify-center transition-all duration-200 transform hover:scale-110"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewDetails(item);
+                      }}
+                      className="w-7 h-7 md:w-8 md:h-8 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-lg flex items-center justify-center transition-all duration-200 transform hover:scale-110"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Eye className="h-3 w-3 md:h-4 md:w-4" />
                     </button>
-                  )}
+                    
+                    {(isManager || user.role === 'client') && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(item.id);
+                        }}
+                        className="w-7 h-7 md:w-8 md:h-8 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg flex items-center justify-center transition-all duration-200 transform hover:scale-110"
+                      >
+                        <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
+
+        {/* Detail Modal - ADD THIS NEW SECTION */}
+        {showDetailModal && selectedItem && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 bg-gradient-to-r ${getContentTypeStyle(selectedItem.content_type).gradient} rounded-xl flex items-center justify-center shadow-lg`}>
+                    {React.createElement(getContentTypeStyle(selectedItem.content_type).icon, { className: "h-6 w-6 text-white" })}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-800">{selectedItem.title}</h2>
+                    <span className={`text-sm font-bold uppercase tracking-wider ${getContentTypeStyle(selectedItem.content_type).text}`}>
+                      {selectedItem.content_type}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={closeDetailModal}
+                  className="w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 rounded-xl flex items-center justify-center transition-all duration-200"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 space-y-6">
+                {/* Status and Priority */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Status</h4>
+                    <div className={`inline-flex items-center gap-2 px-3 py-2 ${getStatusStyle(selectedItem.status).bg} ${getStatusStyle(selectedItem.status).text} rounded-lg text-sm font-bold`}>
+                      <span>{getStatusStyle(selectedItem.status).icon}</span>
+                      {selectedItem.status}
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Priority</h4>
+                    <div className={`inline-flex items-center gap-2 px-3 py-2 ${getPriorityStyle(selectedItem.priority).bg} ${getPriorityStyle(selectedItem.priority).text} rounded-lg text-sm font-bold`}>
+                      {React.createElement(getPriorityStyle(selectedItem.priority).icon, { className: "w-4 h-4" })}
+                      {selectedItem.priority}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Description</h4>
+                  <p className="text-gray-800 leading-relaxed">{selectedItem.description}</p>
+                </div>
+
+                {/* Requirements */}
+                {selectedItem.requirements && (
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-blue-700 mb-3">Requirements & Notes</h4>
+                    <p className="text-blue-800 leading-relaxed">{selectedItem.requirements}</p>
+                  </div>
+                )}
+
+                {/* Metadata */}
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1">Created</h4>
+                    <p className="text-gray-600">{new Date(selectedItem.created_at).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1">Last Updated</h4>
+                    <p className="text-gray-600">{new Date(selectedItem.updated_at).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                  {(isManager || user.role === 'client') && (
+                    <button
+                      onClick={() => {
+                        handleDelete(selectedItem.id);
+                        closeDetailModal();
+                      }}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105"
+                    >
+                      Delete Item
+                    </button>
+                  )}
+                  <button
+                    onClick={closeDetailModal}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Empty State */}
         {ccList.length === 0 && (
