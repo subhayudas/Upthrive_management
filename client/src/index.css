@@ -550,3 +550,40 @@
     min-height: 32px !important;
   }
 }
+
+/* Add to your index.css file: */
+
+@media (max-width: 768px) {
+  /* Ensure content doesn't get hidden behind mobile navigation */
+  .mobile-safe-bottom {
+    padding-bottom: 5rem !important; /* 80px */
+    margin-bottom: 1rem !important; /* 16px extra */
+  }
+  
+  .mobile-nav-dock-safe {
+    min-height: calc(100vh - 80px) !important;
+    padding-bottom: 80px !important;
+  }
+  
+  /* Mobile navigation height compensation */
+  .mobile-nav-compensation {
+    height: calc(100vh - 80px) !important;
+    overflow-y: auto !important;
+  }
+  
+  /* Dashboard specific mobile spacing */
+  .dashboard-mobile-safe {
+    padding-bottom: 100px !important;
+  }
+  
+  .dashboard-activity-safe {
+    margin-bottom: 80px !important;
+  }
+}
+
+/* iOS Safari safe area support */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobile-nav-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
+  }
+}

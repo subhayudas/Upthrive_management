@@ -135,7 +135,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-20 md:pb-6">
         {/* Mobile-Optimized Header - No Shadows */}
         <div className="mb-4 sm:mb-6">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 p-4 sm:p-6">
@@ -234,7 +234,7 @@ const Dashboard = () => {
           </div>
 
           {/* Compact Recent Activity */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-white/20 p-4 sm:p-5">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-4 sm:p-5 mb-20 md:mb-0">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Recent Activity</h2>
             {recentActivity.length > 0 ? (
               <div className="space-y-2 sm:space-y-3">

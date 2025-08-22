@@ -386,110 +386,12 @@ const Requests = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        {/* Header */}
-        {/* Mobile-Optimized Header - No Shadows */}
-        <div className="mb-3 sm:mb-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl border border-white/20 p-3 sm:p-6">
-            <div className="flex flex-col gap-2 sm:gap-4">
-              <div>
-                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                  {getPageTitle()}
-                </h1>
-                <p className="text-slate-600 mt-0.5 sm:mt-1 font-medium text-xs sm:text-sm md:text-base">
-                  {getPageDescription()}
-                </p>
-              </div>
-              {isClient && (
-                <button
-                  onClick={() => setShowCreateForm(true)}
-                  className="self-start bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg hover:shadow-none transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm"
-                >
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden xs:inline">New Request</span>
-                  <span className="xs:hidden">New</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Create Form - Remove Shadow */}
-        {showCreateForm && (
-          <div className="mb-8 animate-fadeIn">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 p-8">
-              {/* Your existing form content with updated styling */}
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                  <Plus className="h-5 w-5 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-800">Create New Request</h3>
-              </div>
-              <form onSubmit={handleCreate} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Message</label>
-                  <textarea
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    className="input-field"
-                    rows="4"
-                    placeholder="Describe your social media post request..."
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Content Type</label>
-                    <select
-                      value={formData.content_type}
-                      onChange={(e) => setFormData({...formData, content_type: e.target.value})}
-                      className="input-field"
-                    >
-                      <option value="post">Post</option>
-                      <option value="reel">Reel</option>
-                      <option value="story">Story</option>
-                      <option value="carousel">Carousel</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">File (Optional)</label>
-                    <input
-                      type="file"
-                      accept="image/*,video/*" // Accept both images and videos
-                      onChange={handleFileChange}
-                      className="input-field"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Requirements</label>
-                  <textarea
-                    value={formData.requirements}
-                    onChange={(e) => setFormData({...formData, requirements: e.target.value})}
-                    className="input-field"
-                    rows="2"
-                    placeholder="Any specific requirements or notes..."
-                  />
-                </div>
-                <div className="flex space-x-3">
-                  <button type="submit" className="btn-primary">
-                    Submit Request
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateForm(false)}
-                    className="btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Requests Grid - Remove Shadows */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8">
+        {/* Add pb-20 for mobile bottom navigation clearance */}
+        
+        {/* Requests Grid */}
         <div className="space-y-2 sm:space-y-4 pb-20 md:pb-0">
+          {/* Add extra bottom padding for mobile */}
           {requests.map(request => (
             <div key={request.id} className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4 transform transition-all duration-200 hover:scale-[1.02]">
               {/* Compact Header */}

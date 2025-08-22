@@ -479,8 +479,8 @@ const CCList = () => {
           </div>
         )}
 
-        {/* Content Calendar Grid - Mobile Optimized */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 pb-20 md:pb-0">
+        {/* Content Calendar Grid - Mobile Safe */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 pb-24 md:pb-0">
           {ccList.map(item => {
             const contentStyle = getContentTypeStyle(item.content_type);
             const priorityStyle = getPriorityStyle(item.priority);

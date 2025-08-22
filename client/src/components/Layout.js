@@ -133,8 +133,8 @@ const Layout = ({ children }) => {
           {children}
         </main>
 
-        {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
+        {/* Mobile Bottom Navigation - Add safe area */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 pb-safe">
           <div className="flex justify-around">
             {navigationItems.slice(0, 4).map((item) => (
               <Link
