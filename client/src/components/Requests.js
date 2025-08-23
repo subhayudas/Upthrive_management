@@ -386,174 +386,40 @@ const Requests = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <div className="bg-white/70 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-xl border border-white/20 p-4 md:p-8">
-            <div className="flex flex-col gap-4">
-              <div>
-                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                  {getPageTitle()}
-                </h1>
-                <p className="text-slate-600 mt-1 md:mt-2 font-medium text-sm md:text-base">
-                  {getPageDescription()}
-                </p>
-              </div>
-              {isClient && (
-                <button
-                  onClick={() => setShowCreateForm(true)}
-                  className="self-start group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2 text-sm md:text-base"
-                >
-                  <Plus className="h-4 w-4 md:h-5 md:w-5 group-hover:rotate-90 transition-transform duration-200" />
-                  New Request
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Create Form - wrap in backdrop blur container */}
-        {showCreateForm && (
-          <div className="mb-8 animate-fadeIn">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-8">
-              {/* Your existing form content with updated styling */}
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                  <Plus className="h-5 w-5 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-800">Create New Request</h3>
-              </div>
-              <form onSubmit={handleCreate} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Message</label>
-                  <textarea
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    className="input-field"
-                    rows="4"
-                    placeholder="Describe your social media post request..."
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Content Type</label>
-                    <select
-                      value={formData.content_type}
-                      onChange={(e) => setFormData({...formData, content_type: e.target.value})}
-                      className="input-field"
-                    >
-                      <option value="post">Post</option>
-                      <option value="reel">Reel</option>
-                      <option value="story">Story</option>
-                      <option value="carousel">Carousel</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">File (Optional)</label>
-                    <input
-                      type="file"
-                      accept="image/*,video/*" // Accept both images and videos
-                      onChange={handleFileChange}
-                      className="input-field"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Requirements</label>
-                  <textarea
-                    value={formData.requirements}
-                    onChange={(e) => setFormData({...formData, requirements: e.target.value})}
-                    className="input-field"
-                    rows="2"
-                    placeholder="Any specific requirements or notes..."
-                  />
-                </div>
-                <div className="flex space-x-3">
-                  <button type="submit" className="btn-primary">
-                    Submit Request
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateForm(false)}
-                    className="btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Requests Grid - Mobile Optimized */}
-        <div className="grid grid-cols-1 gap-4 md:gap-6 pb-20 md:pb-0">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8">
+        {/* Add pb-20 for mobile bottom navigation clearance */}
+        
+        {/* Requests Grid */}
+        <div className="space-y-2 sm:space-y-4 pb-20 md:pb-0">
+          {/* Add extra bottom padding for mobile */}
           {requests.map(request => (
-            <div key={request.id} className="group bg-white/70 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl border border-white/20 p-4 md:p-6 transform hover:scale-105 transition-all duration-300">
-              <div className="flex justify-between items-start mb-3 md:mb-4">
-                <div className="flex items-center">
-                  <MessageSquare className="h-4 w-4 md:h-5 md:w-5 text-primary-600 mr-2" />
-                  <span className="text-xs md:text-sm font-medium text-gray-500 uppercase">
-                    {request.content_type}
-                  </span>
-                </div>
-                <div className="text-xs md:text-sm">
-                  {getStatusBadge(request.status)}
-                </div>
-              </div>
-              
-              <p className="text-gray-900 mb-3 line-clamp-2 text-sm md:text-base">{request.message}</p>
-              
-              {request.requirements && (
-                <div className="mb-3">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Requirements:</p>
-                  <p className="text-xs text-gray-600 line-clamp-1">{request.requirements}</p>
-                </div>
-              )}
-              
-              {request.image_url && (
-                <div className="mt-3 md:mt-4">
-                  <p className="text-xs md:text-sm font-semibold text-slate-700 mb-2">Attached File:</p>
-                  <div className="relative group cursor-pointer" onClick={() => handleViewRequestDetails(request)}>
-                    {request.image_url.includes('.mp4') || request.image_url.includes('.mov') || request.image_url.includes('.avi') || request.image_url.includes('.webm') ? (
-                      <video 
-                        controls 
-                        className="max-w-full h-auto rounded-lg shadow-md"
-                        style={{ maxHeight: '120px' }}
-                      >
-                        <source src={request.image_url} type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
-                    ) : (
-                      <img 
-                        src={request.image_url} 
-                        alt="Request attachment" 
-                        className="max-w-full h-auto rounded-lg shadow-md"
-                        style={{ maxHeight: '120px' }}
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-black bg-opacity-30 rounded-lg transition-opacity duration-200 group-hover:opacity-0"></div>
+            <div key={request.id} className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4 transform transition-all duration-200 hover:scale-[1.02]">
+              {/* Compact Header */}
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${getStatusStyles(request.status).badge}`}></div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-800 truncate">{request.message}</h3>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-gray-500">{request.content_type}</span>
+                      <span className="text-xs text-gray-400">•</span>
+                      <span className="text-xs text-gray-500">{new Date(request.created_at).toLocaleDateString()}</span>
+                    </div>
                   </div>
                 </div>
-              )}
-              
-              <div className="flex justify-between items-center text-xs md:text-sm text-gray-500 mb-3 md:mb-4">
-                <span>Created: {new Date(request.created_at).toLocaleDateString()}</span>
-                {request.from_user && (
-                  <span className="hidden md:inline">From: {request.from_user.name}</span>
-                )}
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getStatusStyles(request.status).bg} ${getStatusStyles(request.status).text} border ${getStatusStyles(request.status).border || ''}`}>
+                  {request.status.replace(/_/g, ' ').replace(/pending manager/, 'pending').replace(/assigned to/, 'assigned')}
+                </span>
               </div>
 
-              {/* Mobile-optimized Actions */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-0">
-                <div className="flex gap-2 flex-wrap">
-                  {renderRequestActions(request)}
-                </div>
+              {/* Compact Actions */}
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
+                {renderRequestActions(request)}
                 <button
                   onClick={() => handleViewRequestDetails(request)}
-                  className="text-indigo-600 hover:underline text-xs md:text-sm font-medium"
+                  className="text-indigo-600 hover:text-indigo-800 text-xs font-medium px-2 py-1 rounded border border-indigo-200 hover:bg-indigo-50 transition-colors"
                 >
-                  View Details
+                  Details
                 </button>
               </div>
             </div>

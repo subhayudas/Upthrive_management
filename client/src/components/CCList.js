@@ -312,9 +312,9 @@ const CCList = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section */}
+        {/* Header Section - No Shadows */}
         <div className="mb-6 md:mb-8">
-          <div className="bg-white/70 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-xl border border-white/20 p-4 md:p-8">
+          <div className="bg-white/70 backdrop-blur-sm rounded-xl md:rounded-2xl border border-white/20 p-4 md:p-8">
             <div className="flex flex-col gap-4">
               <div>
                 <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
@@ -327,7 +327,7 @@ const CCList = () => {
               {(isManager || user.role === 'client') && (
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="self-start group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2 text-sm md:text-base"
+                  className="self-start group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2 text-sm md:text-base"
                 >
                   <Plus className="h-4 w-4 md:h-5 md:w-5 group-hover:rotate-90 transition-transform duration-200" />
                   Add Content
@@ -337,10 +337,10 @@ const CCList = () => {
           </div>
         </div>
 
-        {/* Create Form */}
+        {/* Create Form - No Shadows */}
         {showCreateForm && (
           <div className="mb-8 animate-fadeIn">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-8">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
                   <Plus className="h-5 w-5 text-white" />
@@ -428,7 +428,7 @@ const CCList = () => {
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <button 
                     type="submit" 
-                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transform hover:scale-105 transition-all duration-200"
                   >
                     Create Content Item
                   </button>
@@ -445,10 +445,10 @@ const CCList = () => {
           </div>
         )}
 
-        {/* Client Selection */}
+        {/* Client Selection - No Shadows */}
         {(isManager || isEditor) && (
           <div className="mb-8">
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 p-6">
               <label className="block text-sm font-semibold text-slate-700 mb-3">
                 Select Client
               </label>
@@ -479,9 +479,9 @@ const CCList = () => {
           </div>
         )}
 
-        {/* Content Calendar Grid - Mobile Optimized */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 pb-20 md:pb-0">
-          {ccList.map((item) => {
+        {/* Content Calendar Grid - Mobile Safe */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 pb-24 md:pb-0">
+          {ccList.map(item => {
             const contentStyle = getContentTypeStyle(item.content_type);
             const priorityStyle = getPriorityStyle(item.priority);
             const statusStyle = getStatusStyle(item.status);
@@ -491,77 +491,82 @@ const CCList = () => {
             return (
               <div 
                 key={item.id} 
-                className={`group relative ${contentStyle.bg} ${contentStyle.border} border-2 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 overflow-hidden cursor-pointer`}
-                onClick={() => handleViewDetails(item)}
+                className="bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 p-4 sm:p-6 transform transition-all duration-200 hover:scale-[1.02] cursor-pointer"
+                onClick={() => handleViewDetails(item)} // ✅ Changed from openDetailModal to handleViewDetails
               >
-                {/* Background Pattern */}
-                <div className="absolute top-0 right-0 w-24 h-24 md:w-32 md:h-32 opacity-5">
-                  <ContentIcon className="w-full h-full" />
-                </div>
-                
-                {/* Header */}
-                <div className="flex justify-between items-start mb-3 md:mb-4">
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className={`w-8 h-8 md:w-12 md:h-12 bg-gradient-to-r ${contentStyle.gradient} rounded-lg md:rounded-xl flex items-center justify-center shadow-lg`}>
-                      <ContentIcon className="h-4 w-4 md:h-6 md:w-6 text-white" />
+                {/* Header with Content Type */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 bg-gradient-to-r ${contentStyle.gradient} rounded-xl flex items-center justify-center`}>
+                      <ContentIcon className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <span className={`text-xs font-bold uppercase tracking-wider ${contentStyle.text}`}>
+                      <h3 className="font-bold text-slate-800 text-lg leading-tight">{item.title}</h3>
+                      <span className={`text-sm font-bold uppercase tracking-wider ${contentStyle.text}`}>
                         {item.content_type}
                       </span>
                     </div>
                   </div>
                   
-                  {/* Priority Badge */}
-                  <div className={`flex items-center gap-1 px-2 md:px-3 py-1 ${priorityStyle.bg} ${priorityStyle.text} rounded-full text-xs font-bold shadow-lg`}>
-                    <PriorityIcon className="w-3 h-3" />
-                    <span className="hidden md:inline">{item.priority}</span>
-                  </div>
+                  {/* Status indicator */}
+                  <div className={`w-3 h-3 ${statusStyle.badge} rounded-full`}></div>
                 </div>
 
-                {/* Content */}
-                <div className="space-y-2 md:space-y-3">
-                  <h3 className="font-bold text-slate-800 text-base md:text-lg leading-tight group-hover:text-slate-900 transition-colors">
-                    {item.title}
-                  </h3>
-                  
-                  <p className="text-slate-600 text-xs md:text-sm leading-relaxed line-clamp-2">
-                    {item.description}
-                  </p>
+                {/* Description */}
+                <p className="text-slate-600 text-sm mb-4 line-clamp-2 leading-relaxed">
+                  {item.description}
+                </p>
 
-                  {/* Status Badge */}
-                  <div className={`inline-flex items-center gap-2 px-2 md:px-3 py-1 ${statusStyle.bg} ${statusStyle.text} rounded-full text-xs font-bold`}>
+                {/* Priority and Status */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 ${priorityStyle.bg} ${priorityStyle.text} rounded-lg text-xs font-bold`}>
+                    <PriorityIcon className="w-3 h-3" />
+                    {item.priority}
+                  </div>
+                  
+                  <div className={`inline-flex items-center gap-1 px-2 py-1 ${statusStyle.bg} ${statusStyle.text} rounded-md text-xs font-medium`}>
                     <span>{statusStyle.icon}</span>
                     {item.status}
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex justify-between items-center mt-4 md:mt-6 pt-3 md:pt-4 border-t border-white/30">
-                  <div className="text-xs text-slate-500 font-medium">
-                    {new Date(item.created_at).toLocaleDateString()}
+                {/* Requirements preview */}
+                {item.requirements && (
+                  <div className="mb-4">
+                    <p className="text-xs text-slate-500 bg-slate-50 rounded-lg p-2 line-clamp-1">
+                      <span className="font-medium">Requirements:</span> {item.requirements}
+                    </p>
                   </div>
+                )}
+
+                {/* Footer with Actions */}
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                  <span className="text-xs text-slate-500">
+                    {new Date(item.created_at).toLocaleDateString()}
+                  </span>
                   
-                  <div className="flex gap-1 md:gap-2">
+                  <div className="flex gap-2">
                     <button
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e.stopPropagation(); // Prevent card click
                         handleViewDetails(item);
                       }}
-                      className="w-7 h-7 md:w-8 md:h-8 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-lg flex items-center justify-center transition-all duration-200 transform hover:scale-110"
+                      className="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-all duration-200"
+                      title="View Details"
                     >
-                      <Eye className="h-3 w-3 md:h-4 md:w-4" />
+                      <Eye className="h-4 w-4" />
                     </button>
                     
                     {(isManager || user.role === 'client') && (
                       <button
                         onClick={(e) => {
-                          e.stopPropagation();
+                          e.stopPropagation(); // Prevent card click
                           handleDelete(item.id);
                         }}
-                        className="w-7 h-7 md:w-8 md:h-8 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg flex items-center justify-center transition-all duration-200 transform hover:scale-110"
+                        className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
+                        title="Delete Item"
                       >
-                        <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     )}
                   </div>
@@ -571,10 +576,10 @@ const CCList = () => {
           })}
         </div>
 
-        {/* Detail Modal - ADD THIS NEW SECTION */}
+        {/* Detail Modal - No Shadows */}
         {showDetailModal && selectedItem && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200">
               {/* Modal Header */}
               <div className="flex justify-between items-center p-6 border-b border-gray-200">
                 <div className="flex items-center gap-3">
@@ -680,10 +685,10 @@ const CCList = () => {
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty State - No Shadows */}
         {ccList.length === 0 && (
           <div className="text-center py-16">
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-12 max-w-md mx-auto">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 p-12 max-w-md mx-auto">
               <div className="w-20 h-20 bg-gradient-to-r from-slate-300 to-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Calendar className="h-10 w-10 text-white" />
               </div>
