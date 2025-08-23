@@ -2,7 +2,28 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../contexts/AuthContext';
-import { Eye, EyeOff, Mail, Lock, User, Building, Phone } from 'lucide-react'; // ✅ Add Phone import
+import { Eye, EyeOff } from 'lucide-react';
+
+
+
+// Glass Input Wrapper Component
+const GlassInputWrapper = ({ children }) => (
+  <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-sm transition-colors focus-within:border-violet-400/70 focus-within:bg-violet-500/10">
+    {children}
+  </div>
+);
+
+// Testimonial Card Component
+const TestimonialCard = ({ testimonial, delay }) => (
+  <div className={`animate-testimonial ${delay} flex items-start gap-3 rounded-3xl bg-white/40 dark:bg-zinc-800/40 backdrop-blur-xl border border-white/10 p-5 w-64`}>
+    <img src={testimonial.avatarSrc} className="h-10 w-10 object-cover rounded-2xl" alt="avatar" />
+    <div className="text-sm leading-snug">
+      <p className="flex items-center gap-1 font-medium text-gray-900">{testimonial.name}</p>
+      <p className="text-gray-600">{testimonial.handle}</p>
+      <p className="mt-1 text-gray-700">{testimonial.text}</p>
+    </div>
+  </div>
+);
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -29,225 +50,236 @@ const Register = () => {
     }
   };
 
+  // Sample testimonials for the right side
+  const testimonials = [
+    {
+      avatarSrc: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+      name: "Alex Rodriguez",
+      handle: "@alexr",
+      text: "Joining this platform was the best decision for our team. The collaboration features are amazing!"
+    },
+    {
+      avatarSrc: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+      name: "Lisa Wang",
+      handle: "@lisaw",
+      text: "The user experience is incredible. Everything is so intuitive and well-designed."
+    },
+    {
+      avatarSrc: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+      name: "David Kim",
+      handle: "@davidk",
+      text: "Perfect for managing our creative projects. Highly recommend to anyone!"
+    }
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link
-              to="/login"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              sign in to your existing account
-            </Link>
-          </p>
+    <div className="h-[100dvh] flex flex-col md:flex-row font-sans w-[100dvw] bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      {/* Left column: sign-up form */}
+      <section className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          <div className="flex flex-col gap-6">
+            <h1 className="animate-element animate-delay-100 text-4xl md:text-5xl font-semibold leading-tight">
+              <span className="font-light text-gray-900 tracking-tighter">Join Us</span>
+            </h1>
+            <p className="animate-element animate-delay-200 text-gray-600">
+              Create your account and start your journey with us today
+            </p>
+
+            <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+              {/* Name Field */}
+              <div className="animate-element animate-delay-300">
+                <label className="text-sm font-medium text-gray-700">Full Name</label>
+                <GlassInputWrapper>
+                  <input 
+                    name="name" 
+                    type="text" 
+                    placeholder="Enter your full name" 
+                    className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500"
+                    {...register('name', {
+                      required: 'Name is required',
+                      minLength: {
+                        value: 2,
+                        message: 'Name must be at least 2 characters'
+                      }
+                    })}
+                  />
+                </GlassInputWrapper>
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div className="animate-element animate-delay-400">
+                <label className="text-sm font-medium text-gray-700">Email Address</label>
+                <GlassInputWrapper>
+                  <input 
+                    name="email" 
+                    type="email" 
+                    placeholder="Enter your email address" 
+                    className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500"
+                    {...register('email', {
+                      required: 'Email is required',
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: 'Invalid email address'
+                      }
+                    })}
+                  />
+                </GlassInputWrapper>
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                )}
+              </div>
+
+              {/* Phone Number Field */}
+              <div className="animate-element animate-delay-500">
+                <label className="text-sm font-medium text-gray-700">Phone Number</label>
+                <GlassInputWrapper>
+                  <input 
+                    name="phone" 
+                    type="tel" 
+                    placeholder="+1234567890" 
+                    className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500"
+                    {...register('phone', {
+                      required: 'Phone number is required',
+                      pattern: {
+                        value: /^\+[1-9]\d{1,14}$/,
+                        message: 'Please enter a valid phone number with country code (e.g., +1234567890)'
+                      }
+                    })}
+                  />
+                </GlassInputWrapper>
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Include country code (e.g., +1 for US, +91 for India)
+                </p>
+              </div>
+
+              {/* Role Field */}
+              <div className="animate-element animate-delay-600">
+                <label className="text-sm font-medium text-gray-700">Role</label>
+                <GlassInputWrapper>
+                  <select 
+                    name="role" 
+                    className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-gray-900"
+                    {...register('role', {
+                      required: 'Role is required'
+                    })}
+                  >
+                    <option value="">Select your role</option>
+                    <option value="client">Client</option>
+                    <option value="manager">Manager</option>
+                    <option value="editor">Editor</option>
+                  </select>
+                </GlassInputWrapper>
+                {errors.role && (
+                  <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div className="animate-element animate-delay-700">
+                <label className="text-sm font-medium text-gray-700">Password</label>
+                <GlassInputWrapper>
+                  <div className="relative">
+                    <input 
+                      name="password" 
+                      type={showPassword ? 'text' : 'password'} 
+                      placeholder="Enter your password" 
+                      className="w-full bg-transparent text-sm p-4 pr-12 rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500"
+                      {...register('password', {
+                        required: 'Password is required',
+                        minLength: {
+                          value: 6,
+                          message: 'Password must be at least 6 characters'
+                        }
+                      })}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)} 
+                      className="absolute inset-y-0 right-3 flex items-center"
+                    >
+                      {showPassword ? 
+                        <EyeOff className="w-5 h-5 text-gray-500 hover:text-gray-700 transition-colors" /> : 
+                        <Eye className="w-5 h-5 text-gray-500 hover:text-gray-700 transition-colors" />
+                      }
+                    </button>
+                  </div>
+                </GlassInputWrapper>
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="animate-element animate-delay-800">
+                <label className="text-sm font-medium text-gray-700">Confirm Password</label>
+                <GlassInputWrapper>
+                  <input 
+                    name="confirmPassword" 
+                    type={showPassword ? 'text' : 'password'} 
+                    placeholder="Confirm your password" 
+                    className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500"
+                    {...register('confirmPassword', {
+                      required: 'Please confirm your password',
+                      validate: value => value === password || 'Passwords do not match'
+                    })}
+                  />
+                </GlassInputWrapper>
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className="animate-element animate-delay-900 w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 py-4 font-medium text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Creating Account...
+                  </div>
+                ) : (
+                  'Create Account'
+                )}
+              </button>
+            </form>
+
+
+
+            <p className="animate-element animate-delay-1200 text-center text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link to="/login" className="text-violet-600 hover:underline transition-colors">
+                Sign In
+              </Link>
+            </p>
+          </div>
         </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div className="space-y-4">
-            {/* Name Field */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="name"
-                  type="text"
-                  autoComplete="name"
-                  className={`input-field pl-10 ${errors.name ? 'border-red-500' : ''}`}
-                  placeholder="Enter your full name"
-                  {...register('name', {
-                    required: 'Name is required',
-                    minLength: {
-                      value: 2,
-                      message: 'Name must be at least 2 characters'
-                    }
-                  })}
-                />
-              </div>
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-              )}
-            </div>
+      </section>
 
-            {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  className={`input-field pl-10 ${errors.email ? 'border-red-500' : ''}`}
-                  placeholder="Enter your email"
-                  {...register('email', {
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address'
-                    }
-                  })}
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* ✅ NEW: Phone Number Field */}
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  className={`input-field pl-10 ${errors.phone ? 'border-red-500' : ''}`}
-                  placeholder="+1234567890"
-                  {...register('phone', {
-                    required: 'Phone number is required',
-                    pattern: {
-                      value: /^\+[1-9]\d{1,14}$/,
-                      message: 'Please enter a valid phone number with country code (e.g., +1234567890)'
-                    }
-                  })}
-                />
-              </div>
-              {errors.phone && (
-                <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
-              )}
-              <p className="mt-1 text-xs text-gray-500">
-                Include country code (e.g., +1 for US, +91 for India)
-              </p>
-            </div>
-
-            {/* Role Field */}
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Role
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Building className="h-5 w-5 text-gray-400" />
-                </div>
-                <select
-                  id="role"
-                  className={`input-field pl-10 ${errors.role ? 'border-red-500' : ''}`}
-                  {...register('role', {
-                    required: 'Role is required'
-                  })}
-                >
-                  <option value="">Select your role</option>
-                  <option value="client">Client</option>
-                  <option value="manager">Manager</option>
-                  <option value="editor">Editor</option>
-                </select>
-              </div>
-              {errors.role && (
-                <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
-              )}
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
-                  placeholder="Enter your password"
-                  {...register('password', {
-                    required: 'Password is required',
-                    minLength: {
-                      value: 6,
-                      message: 'Password must be at least 6 characters'
-                    }
-                  })}
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-              )}
-            </div>
-
-            {/* Confirm Password Field */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="confirmPassword"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  className={`input-field pl-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
-                  placeholder="Confirm your password"
-                  {...register('confirmPassword', {
-                    required: 'Please confirm your password',
-                    validate: value => value === password || 'Passwords do not match'
-                  })}
-                />
-              </div>
-              {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
-              )}
-            </div>
+      {/* Right column: hero image + testimonials */}
+      <section className="hidden md:block flex-1 relative p-4">
+        <div className="animate-slide-right animate-delay-300 absolute inset-4 rounded-3xl bg-cover bg-center" 
+             style={{ 
+               backgroundImage: `url(https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80)`,
+               backgroundSize: 'cover',
+               backgroundPosition: 'center'
+             }}>
+        </div>
+        {testimonials.length > 0 && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 px-8 w-full justify-center">
+            <TestimonialCard testimonial={testimonials[0]} delay="animate-delay-1300" />
+            {testimonials[1] && <div className="hidden xl:flex"><TestimonialCard testimonial={testimonials[1]} delay="animate-delay-1400" /></div>}
+            {testimonials[2] && <div className="hidden 2xl:flex"><TestimonialCard testimonial={testimonials[2]} delay="animate-delay-1500" /></div>}
           </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                'Create Account'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+        )}
+      </section>
     </div>
   );
 };

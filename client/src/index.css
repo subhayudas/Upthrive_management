@@ -12,6 +12,46 @@
   }
 }
 
+/* Animation keyframes for the new signin page */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px);
+  }
+}
+
+@keyframes slideRightIn {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateX(0px);
+  }
+}
+
+@keyframes testimonialIn {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px) scale(1);
+  }
+}
+
 @layer components {
   .btn-primary {
     @apply bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transform hover:scale-105 transition-all duration-200;
@@ -72,6 +112,91 @@
   
   .glass-card {
     @apply bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20;
+  }
+
+  /* Animation utilities for the new signin page */
+  .animate-element {
+    animation: fadeSlideIn 0.6s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-slide-right {
+    animation: slideRightIn 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-testimonial {
+    animation: testimonialIn 0.6s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-delay-100 {
+    animation-delay: 0.1s;
+  }
+
+  .animate-delay-200 {
+    animation-delay: 0.2s;
+  }
+
+  .animate-delay-300 {
+    animation-delay: 0.3s;
+  }
+
+  .animate-delay-400 {
+    animation-delay: 0.4s;
+  }
+
+  .animate-delay-500 {
+    animation-delay: 0.5s;
+  }
+
+  .animate-delay-600 {
+    animation-delay: 0.6s;
+  }
+
+  .animate-delay-700 {
+    animation-delay: 0.7s;
+  }
+
+  .animate-delay-800 {
+    animation-delay: 0.8s;
+  }
+
+  .animate-delay-900 {
+    animation-delay: 0.9s;
+  }
+
+  .animate-delay-1000 {
+    animation-delay: 1.0s;
+  }
+
+  .animate-delay-1200 {
+    animation-delay: 1.2s;
+  }
+
+  .animate-delay-1400 {
+    animation-delay: 1.4s;
+  }
+
+  .animate-delay-1100 {
+    animation-delay: 1.1s;
+  }
+
+  .animate-delay-1200 {
+    animation-delay: 1.2s;
+  }
+
+  .animate-delay-1300 {
+    animation-delay: 1.3s;
+  }
+
+  .animate-delay-1500 {
+    animation-delay: 1.5s;
+  }
+
+  /* Custom checkbox styles */
+  .custom-checkbox {
+    @apply w-4 h-4 text-violet-600 bg-white border border-gray-300 rounded focus:ring-violet-500 focus:ring-2;
   }
 }
 
