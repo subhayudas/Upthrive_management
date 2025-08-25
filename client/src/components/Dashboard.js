@@ -122,12 +122,12 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="relative">
-            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-black rounded-full animate-spin mx-auto"></div>
           </div>
-          <p className="mt-3 text-slate-600 text-sm">Loading...</p>
+          <p className="mt-3 text-black text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -161,7 +161,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
-              <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
+              <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-black" />
               <div>
                 <p className="text-xs sm:text-sm text-gray-600">Total</p>
                 <p className="text-lg sm:text-xl font-bold text-gray-800">{stats.totalRequests}</p>
@@ -171,7 +171,7 @@ const Dashboard = () => {
 
           <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
-              <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
+              <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
               <div>
                 <p className="text-xs sm:text-sm text-gray-600">Pending</p>
                 <p className="text-lg sm:text-xl font-bold text-gray-800">{stats.pendingRequests}</p>
@@ -181,7 +181,7 @@ const Dashboard = () => {
 
           <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
-              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
               <div>
                 <p className="text-xs sm:text-sm text-gray-600">In Progress</p>
                 <p className="text-lg sm:text-xl font-bold text-gray-800">{stats.inProgressRequests}</p>
@@ -191,7 +191,7 @@ const Dashboard = () => {
 
           <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
-              <CheckSquare className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+              <CheckSquare className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
               <div>
                 <p className="text-xs sm:text-sm text-gray-600">Completed</p>
                 <p className="text-lg sm:text-xl font-bold text-gray-800">{stats.completedRequests}</p>

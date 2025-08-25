@@ -417,7 +417,7 @@ const Requests = () => {
                 {renderRequestActions(request)}
                 <button
                   onClick={() => handleViewRequestDetails(request)}
-                  className="text-indigo-600 hover:text-indigo-800 text-xs font-medium px-2 py-1 rounded border border-indigo-200 hover:bg-indigo-50 transition-colors"
+                  className="text-black hover:text-gray-800 text-xs font-medium px-2 py-1 rounded border border-gray-200 hover:bg-gray-100 transition-colors"
                 >
                   Details
                 </button>
