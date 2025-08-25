@@ -222,24 +222,24 @@ const CCList = () => {
     const styles = {
       post: { 
         icon: FileText, 
-        gradient: 'from-blue-500 to-indigo-600',
-        bg: 'bg-gradient-to-br from-blue-50 to-indigo-50',
-        border: 'border-blue-200',
-        text: 'text-blue-700'
+        gradient: 'from-gray-700 to-gray-900',
+        bg: 'bg-gray-50',
+        border: 'border-gray-200',
+        text: 'text-gray-700'
       },
       reel: { 
         icon: Zap, 
-        gradient: 'from-purple-500 to-pink-600',
-        bg: 'bg-gradient-to-br from-purple-50 to-pink-50',
-        border: 'border-purple-200',
-        text: 'text-purple-700'
+        gradient: 'from-gray-600 to-gray-800',
+        bg: 'bg-gray-50',
+        border: 'border-gray-200',
+        text: 'text-gray-700'
       },
       story: { 
         icon: Clock, 
-        gradient: 'from-orange-500 to-red-600',
-        bg: 'bg-gradient-to-br from-orange-50 to-red-50',
-        border: 'border-orange-200',
-        text: 'text-orange-700'
+        gradient: 'from-gray-500 to-gray-700',
+        bg: 'bg-gray-50',
+        border: 'border-gray-200',
+        text: 'text-gray-700'
       }
     };
     return styles[type] || styles.post;
@@ -249,22 +249,22 @@ const CCList = () => {
   const getPriorityStyle = (priority) => {
     const styles = {
       high: { 
-        bg: 'bg-gradient-to-r from-red-500 to-rose-600', 
+        bg: 'bg-black', 
         text: 'text-white',
         icon: Target,
-        glow: 'shadow-red-200'
+        glow: 'shadow-gray-200'
       },
       medium: { 
-        bg: 'bg-gradient-to-r from-amber-500 to-orange-600', 
+        bg: 'bg-gray-600', 
         text: 'text-white',
         icon: Star,
-        glow: 'shadow-amber-200'
+        glow: 'shadow-gray-200'
       },
       low: { 
-        bg: 'bg-gradient-to-r from-emerald-500 to-teal-600', 
+        bg: 'bg-gray-400', 
         text: 'text-white',
         icon: Calendar,
-        glow: 'shadow-emerald-200'
+        glow: 'shadow-gray-200'
       }
     };
     return styles[priority] || styles.medium;
@@ -274,22 +274,22 @@ const CCList = () => {
   const getStatusStyle = (status) => {
     const styles = {
       active: { 
-        bg: 'bg-green-100', 
-        text: 'text-green-700',
-        icon: '✅',
-        badge: 'bg-green-500'
-      },
-      inactive: { 
         bg: 'bg-gray-100', 
         text: 'text-gray-700',
-        icon: '⏸️',
+        icon: '🔵',
+        badge: 'bg-gray-600'
+      },
+      scheduled: { 
+        bg: 'bg-gray-200', 
+        text: 'text-gray-800',
+        icon: '⏰',
         badge: 'bg-gray-500'
       },
       completed: { 
-        bg: 'bg-blue-100', 
-        text: 'text-blue-700',
+        bg: 'bg-gray-300', 
+        text: 'text-gray-900',
         icon: '🎉',
-        badge: 'bg-blue-500'
+        badge: 'bg-black'
       }
     };
     return styles[status] || styles.active;
@@ -297,20 +297,20 @@ const CCList = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="relative">
-            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
-            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-purple-400 rounded-full animate-ping mx-auto"></div>
+            <div className="w-16 h-16 border-4 border-gray-200 border-t-gray-600 rounded-full animate-spin mx-auto"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-gray-400 rounded-full animate-ping mx-auto"></div>
           </div>
-          <p className="mt-4 text-slate-600 font-medium">Loading your content calendar...</p>
+          <p className="mt-4 text-gray-600 font-medium">Loading your content calendar...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section - No Shadows */}
         <div className="mb-6 md:mb-8">
@@ -327,7 +327,7 @@ const CCList = () => {
               {(isManager || user.role === 'client') && (
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="self-start group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2 text-sm md:text-base"
+                  className="self-start group relative bg-black hover:bg-gray-800 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2 text-sm md:text-base"
                 >
                   <Plus className="h-4 w-4 md:h-5 md:w-5 group-hover:rotate-90 transition-transform duration-200" />
                   Add Content
@@ -701,7 +701,7 @@ const CCList = () => {
               {(isManager || user.role === 'client') && (
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  className="bg-black hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                 >
                   Create First Item
                 </button>

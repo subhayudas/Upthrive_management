@@ -191,46 +191,46 @@ const Requests = () => {
   const getStatusStyles = (status) => {
     const styles = {
       'pending_manager_review': { 
-        bg: 'bg-yellow-100', 
-        text: 'text-yellow-700',
+        bg: 'bg-gray-100', 
+        text: 'text-gray-800',
         icon: '⏳',
-        badge: 'bg-yellow-500'
+        badge: 'bg-gray-500'
       },
       'assigned_to_editor': { 
-        bg: 'bg-blue-100', 
-        text: 'text-blue-700',
+        bg: 'bg-gray-200', 
+        text: 'text-gray-800',
         icon: '👷',
-        badge: 'bg-blue-500'
+        badge: 'bg-gray-600'
       },
       'submitted_for_review': { 
-        bg: 'bg-purple-100', 
-        text: 'text-purple-700',
+        bg: 'bg-gray-100', 
+        text: 'text-gray-800',
         icon: '📋',
-        badge: 'bg-purple-500'
+        badge: 'bg-gray-500'
       },
       'manager_approved': { 
-        bg: 'bg-green-100', 
-        text: 'text-green-700',
+        bg: 'bg-gray-300', 
+        text: 'text-gray-900',
         icon: '✅',
-        badge: 'bg-green-500'
+        badge: 'bg-gray-700'
       },
       'manager_rejected': { 
-        bg: 'bg-red-100', 
-        text: 'text-red-700',
+        bg: 'bg-gray-100', 
+        text: 'text-gray-700',
         icon: '❌',
-        badge: 'bg-red-500'
+        badge: 'bg-gray-400'
       },
       'client_approved': { 
-        bg: 'bg-emerald-100', 
-        text: 'text-emerald-700',
+        bg: 'bg-black', 
+        text: 'text-white',
         icon: '🎉',
-        badge: 'bg-emerald-500'
+        badge: 'bg-black'
       },
       'client_rejected': { 
-        bg: 'bg-orange-100', 
-        text: 'text-orange-700',
+        bg: 'bg-gray-100', 
+        text: 'text-gray-700',
         icon: '🔄',
-        badge: 'bg-orange-500'
+        badge: 'bg-gray-500'
       },
       'completed': { 
         bg: 'bg-gray-100', 
@@ -246,27 +246,27 @@ const Requests = () => {
     const styles = {
       'post': { 
         icon: FileText, 
-        gradient: 'from-blue-500 to-indigo-600',
-        bg: 'bg-blue-50',
-        text: 'text-blue-700'
+        gradient: 'from-gray-700 to-gray-900',
+        bg: 'bg-gray-50',
+        text: 'text-gray-700'
       },
       'reel': { 
         icon: Zap, 
-        gradient: 'from-purple-500 to-pink-600',
-        bg: 'bg-purple-50',
-        text: 'text-purple-700'
+        gradient: 'from-gray-600 to-gray-800',
+        bg: 'bg-gray-50',
+        text: 'text-gray-700'
       },
       'story': { 
         icon: Clock, 
-        gradient: 'from-orange-500 to-red-600',
-        bg: 'bg-orange-50',
-        text: 'text-orange-700'
+        gradient: 'from-gray-500 to-gray-700',
+        bg: 'bg-gray-50',
+        text: 'text-gray-700'
       },
       'video': { 
         icon: Upload, 
-        gradient: 'from-green-500 to-teal-600',
-        bg: 'bg-green-50',
-        text: 'text-green-700'
+        gradient: 'from-gray-600 to-gray-800',
+        bg: 'bg-gray-50',
+        text: 'text-gray-700'
       }
     };
     return styles[contentType] || styles['post'];
@@ -314,7 +314,7 @@ const Requests = () => {
           <button
             onClick={isMobile ? (e) => handleReviewClickMobile(e, request) : () => handleReviewClick(request)}
             onTouchStart={() => console.log('👆 Review button touched')}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium shadow-lg touch-manipulation"
+            className="bg-black hover:bg-gray-800 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium touch-manipulation"
             style={{ minWidth: '48px', minHeight: '48px' }}
           >
             <Eye className="w-4 h-4" />
@@ -328,7 +328,7 @@ const Requests = () => {
           <button
             onClick={isMobile ? (e) => handleClientReviewClickMobile(e, request) : () => handleClientReviewClick(request)}
             onTouchStart={() => console.log('👆 Client review button touched')}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium shadow-lg touch-manipulation"
+            className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium touch-manipulation"
             style={{ minWidth: '48px', minHeight: '48px' }}
           >
             <Eye className="w-4 h-4" />
@@ -385,7 +385,7 @@ const Requests = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8">
         {/* Add pb-20 for mobile bottom navigation clearance */}
         

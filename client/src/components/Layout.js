@@ -208,15 +208,15 @@ const Layout = ({ children }) => {
                   <a
                     key={item.name}
                     href={item.href}
-                    className={`${
+                    className={`group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
                       isCurrentActive
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg'
-                        : 'text-slate-700 hover:bg-white/60 hover:text-slate-900'
-                    } group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105`}
+                        ? 'bg-gray-200 text-black'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
                   >
                     <item.icon
                       className={`${
-                        isCurrentActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'
+                        isCurrentActive ? 'text-black' : 'text-gray-500 group-hover:text-gray-700'
                       } mr-3 h-5 w-5 transition-colors duration-200`}
                     />
                     {item.name}

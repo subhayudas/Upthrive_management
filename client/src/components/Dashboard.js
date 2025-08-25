@@ -208,7 +208,7 @@ const Dashboard = () => {
               {isClient && (
                 <button
                   onClick={() => window.location.href = '/requests'}
-                  className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg flex items-center gap-2 sm:gap-3 transition-all duration-200 text-sm sm:text-base"
+                  className="w-full bg-black hover:bg-gray-800 text-white font-medium py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg flex items-center gap-2 sm:gap-3 transition-all duration-200 text-sm sm:text-base"
                 >
                   <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                   New Request
