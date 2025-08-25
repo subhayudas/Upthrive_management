@@ -264,7 +264,7 @@ const Tasks = () => {
                     setSelectedTask(task);
                     setShowSubmitForm(true);
                   }}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+                  className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 flex items-center gap-2"
                 >
                   <Send className="w-4 h-4" />
                   Submit Work

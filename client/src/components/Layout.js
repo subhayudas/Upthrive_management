@@ -65,9 +65,15 @@ const Layout = ({ children }) => {
               <Menu className="h-6 w-6" />
             </button>
             
-            <h1 className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Agency
-            </h1>
+            {/* Replace text with logo */}
+            <Link to="/" className="flex items-center">
+              <img
+                src="/main_logo.png"
+                alt="Agency Logo"
+                className="h-8 w-auto object-contain"
+                style={{ maxHeight: 32 }}
+              />
+            </Link>
             
             <button
               onClick={handleLogout}
@@ -194,11 +200,22 @@ const Layout = ({ children }) => {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-        <div className="flex flex-col flex-grow bg-white/80 backdrop-blur-sm border-r border-gray-200 pt-5 pb-4 overflow-y-auto">
-          <div className="flex items-center flex-shrink-0 px-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Agency Dashboard
-            </h1>
+        <div className="flex flex-col flex-grow bg-gray-100 border-r border-gray-200 pt-5 pb-4 overflow-y-auto">
+          <div className="flex items-center flex-shrink-0 px-4 justify-center" style={{ marginTop: 8, marginBottom: 16 }}>
+            {/* <img
+              src="/main_logo.png"
+              alt="Agency Logo"
+              className="h-12 w-auto object-contain"
+              style={{ maxHeight: 48 }}
+            /> */}
+            <Link to="/" className="flex items-center justify-center w-full">
+              <img
+                src="/main_logo.png"
+                alt="Agency Logo"
+                className="h-12 w-auto object-contain"
+                style={{ maxHeight: 48 }}
+              />
+            </Link>
           </div>
           <div className="mt-8 flex-grow flex flex-col">
             <nav className="flex-1 px-2 space-y-2 bg-transparent">
@@ -208,15 +225,15 @@ const Layout = ({ children }) => {
                   <a
                     key={item.name}
                     href={item.href}
-                    className={`${
+                    className={`group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
                       isCurrentActive
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg'
-                        : 'text-slate-700 hover:bg-white/60 hover:text-slate-900'
-                    } group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105`}
+                        ? 'bg-gray-200 text-black'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
                   >
                     <item.icon
                       className={`${
-                        isCurrentActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'
+                        isCurrentActive ? 'text-black' : 'text-gray-500 group-hover:text-gray-700'
                       } mr-3 h-5 w-5 transition-colors duration-200`}
                     />
                     {item.name}

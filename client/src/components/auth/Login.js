@@ -144,7 +144,7 @@ const Login = () => {
                   <input type="checkbox" name="rememberMe" className="custom-checkbox" />
                   <span className="text-gray-700">Keep me signed in</span>
                 </label>
-                <Link to="/forgot-password" className="hover:underline text-violet-600 transition-colors">
+                <Link to="/forgot-password" className="hover:underline text-gray-700 transition-colors">
                   Reset password
                 </Link>
               </div>
@@ -152,11 +152,11 @@ const Login = () => {
               <button 
                 type="submit" 
                 disabled={isLoading}
-                className="animate-element animate-delay-600 w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 py-4 font-medium text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="animate-element animate-delay-600 w-full rounded-2xl bg-black hover:bg-gray-800 py-4 font-medium text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black mr-2"></div>
                     Signing in...
                   </div>
                 ) : (
@@ -167,12 +167,16 @@ const Login = () => {
 
 
 
-            <p className="animate-element animate-delay-900 text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-gray-600">
               New to our platform?{' '}
-              <Link to="/register" className="text-violet-600 hover:underline transition-colors">
+              <Link to="/register" className="text-gray-700 hover:underline transition-colors">
                 Create Account
               </Link>
             </p>
+
+
+
+
           </div>
         </div>
       </section>
@@ -198,4 +202,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;

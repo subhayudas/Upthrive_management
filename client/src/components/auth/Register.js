@@ -238,11 +238,11 @@ const Register = () => {
               <button 
                 type="submit" 
                 disabled={isLoading}
-                className="animate-element animate-delay-900 w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 py-4 font-medium text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-2xl bg-black hover:bg-gray-800 py-4 font-medium text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black mr-2"></div>
                     Creating Account...
                   </div>
                 ) : (
@@ -253,9 +253,9 @@ const Register = () => {
 
 
 
-            <p className="animate-element animate-delay-1200 text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="text-violet-600 hover:underline transition-colors">
+              <Link to="/login" className="text-gray-700 hover:underline transition-colors">
                 Sign In
               </Link>
             </p>

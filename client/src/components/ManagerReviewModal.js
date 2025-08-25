@@ -163,7 +163,7 @@ const ManagerReviewModal = ({ request: initialRequest, isOpen, onClose, onReview
               Decision *
             </label>
             <div className="space-y-2">
-              <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition-colors">
+              <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                 <input
                   type="radio"
                   name="action"
@@ -172,13 +172,13 @@ const ManagerReviewModal = ({ request: initialRequest, isOpen, onClose, onReview
                   onChange={(e) => setAction(e.target.value)}
                   className="mr-3"
                 />
-                <Check className="w-5 h-5 text-green-600 mr-2" />
+                <Check className="w-5 h-5 text-gray-700 mr-2" />
                 <div>
-                  <div className="font-medium text-green-800">Approve</div>
-                  <div className="text-sm text-green-600">Send to client for final approval</div>
+                  <div className="font-medium text-gray-800">Approve</div>
+                  <div className="text-sm text-gray-600">Send to client for final approval</div>
                 </div>
               </label>
-              <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-red-50 transition-colors">
+              <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                 <input
                   type="radio"
                   name="action"
@@ -187,10 +187,10 @@ const ManagerReviewModal = ({ request: initialRequest, isOpen, onClose, onReview
                   onChange={(e) => setAction(e.target.value)}
                   className="mr-3"
                 />
-                <XCircle className="w-5 h-5 text-red-600 mr-2" />
+                <XCircle className="w-5 h-5 text-gray-700 mr-2" />
                 <div>
-                  <div className="font-medium text-red-800">Reject</div>
-                  <div className="text-sm text-red-600">Send back to editor with feedback</div>
+                  <div className="font-medium text-gray-800">Reject</div>
+                  <div className="text-sm text-gray-600">Send back to editor with feedback</div>
                 </div>
               </label>
             </div>
@@ -253,12 +253,12 @@ const ManagerReviewModal = ({ request: initialRequest, isOpen, onClose, onReview
           <div className="flex gap-2">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !action}
               className={`flex-1 py-2 px-4 rounded-md font-medium ${
                 action === 'approve' 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  ? 'bg-black hover:bg-gray-800 text-white' 
                   : action === 'reject'
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  ? 'bg-gray-700 hover:bg-gray-800 text-white'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
