@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Plus, Edit, Trash2, FileText, Calendar, Clock, Star, Zap, Target, X, Eye } from 'lucide-react'; // Add X and Eye icons
+import { Plus, Edit, Trash2, FileText, Calendar, Clock, Star, Zap, Target, X, Eye, Upload } from 'lucide-react'; // Add X, Eye, and Upload icons
 import toast from 'react-hot-toast';
 
 const CCList = () => {
@@ -17,8 +17,10 @@ const CCList = () => {
     content_type: 'post',
     requirements: '',
     priority: 'medium',
-    status: 'active'
+    status: 'active',
+    google_drive_link: ''
   });
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
   const [clients, setClients] = useState([]);
 
@@ -90,6 +92,8 @@ const CCList = () => {
       
       const response = await axios.get(`/api/cc-list/${clientId}`);
       console.log('CC List response:', response.data);
+      console.log('First item media_urls:', response.data.ccList[0]?.media_urls);
+      console.log('First item image_url:', response.data.ccList[0]?.image_url);
       setCcList(response.data.ccList);
     } catch (error) {
       console.error('Error fetching CC list:', error);
@@ -105,6 +109,30 @@ const CCList = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const maxSize = 100 * 1024 * 1024;
+    const valid = [];
+    for (const file of files) {
+      if (file.size > maxSize) {
+        toast.error(`${file.name}: must be < 100MB`);
+        continue;
+      }
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        valid.push(file);
+      } else {
+        toast.error(`${file.name}: invalid type`);
+      }
+    }
+    if (valid.length) {
+      // Append to existing files instead of replacing
+      setSelectedFiles(prev => [...prev, ...valid]);
+      toast.success(`Selected ${valid.length} file(s)`);
     }
   };
 
@@ -128,8 +156,27 @@ const CCList = () => {
         return;
       }
       
-      await axios.post(`/api/cc-list/${clientId}`, formData);
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('content_type', formData.content_type);
+      formDataToSend.append('requirements', formData.requirements);
+      formDataToSend.append('priority', formData.priority);
+      formDataToSend.append('status', formData.status);
+      formDataToSend.append('google_drive_link', formData.google_drive_link);
+      
+      if (selectedFiles.length) {
+        selectedFiles.forEach(file => formDataToSend.append('media', file));
+      }
+
+      await axios.post(`/api/cc-list/${clientId}`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       toast.success('CC item created successfully!');
+      setSelectedFiles([]);
       fetchCCList();
     } catch (error) {
       console.error('Error creating CC item:', error);
@@ -222,24 +269,24 @@ const CCList = () => {
     const styles = {
       post: { 
         icon: FileText, 
-        gradient: 'from-blue-500 to-indigo-600',
-        bg: 'bg-gradient-to-br from-blue-50 to-indigo-50',
-        border: 'border-blue-200',
-        text: 'text-blue-700'
+        gradient: 'from-gray-700 to-gray-900',
+        bg: 'bg-gray-50',
+        border: 'border-gray-200',
+        text: 'text-gray-700'
       },
       reel: { 
         icon: Zap, 
-        gradient: 'from-purple-500 to-pink-600',
-        bg: 'bg-gradient-to-br from-purple-50 to-pink-50',
-        border: 'border-purple-200',
-        text: 'text-purple-700'
+        gradient: 'from-gray-600 to-gray-800',
+        bg: 'bg-gray-50',
+        border: 'border-gray-200',
+        text: 'text-gray-700'
       },
       story: { 
         icon: Clock, 
-        gradient: 'from-orange-500 to-red-600',
-        bg: 'bg-gradient-to-br from-orange-50 to-red-50',
-        border: 'border-orange-200',
-        text: 'text-orange-700'
+        gradient: 'from-gray-500 to-gray-700',
+        bg: 'bg-gray-50',
+        border: 'border-gray-200',
+        text: 'text-gray-700'
       }
     };
     return styles[type] || styles.post;
@@ -249,22 +296,22 @@ const CCList = () => {
   const getPriorityStyle = (priority) => {
     const styles = {
       high: { 
-        bg: 'bg-gradient-to-r from-red-500 to-rose-600', 
+        bg: 'bg-black', 
         text: 'text-white',
         icon: Target,
-        glow: 'shadow-red-200'
+        glow: 'shadow-gray-200'
       },
       medium: { 
-        bg: 'bg-gradient-to-r from-amber-500 to-orange-600', 
+        bg: 'bg-gray-600', 
         text: 'text-white',
         icon: Star,
-        glow: 'shadow-amber-200'
+        glow: 'shadow-gray-200'
       },
       low: { 
-        bg: 'bg-gradient-to-r from-emerald-500 to-teal-600', 
+        bg: 'bg-gray-400', 
         text: 'text-white',
         icon: Calendar,
-        glow: 'shadow-emerald-200'
+        glow: 'shadow-gray-200'
       }
     };
     return styles[priority] || styles.medium;
@@ -274,22 +321,22 @@ const CCList = () => {
   const getStatusStyle = (status) => {
     const styles = {
       active: { 
-        bg: 'bg-green-100', 
-        text: 'text-green-700',
-        icon: '✅',
-        badge: 'bg-green-500'
-      },
-      inactive: { 
         bg: 'bg-gray-100', 
         text: 'text-gray-700',
-        icon: '⏸️',
+        icon: '🔵',
+        badge: 'bg-gray-600'
+      },
+      scheduled: { 
+        bg: 'bg-gray-200', 
+        text: 'text-gray-800',
+        icon: '⏰',
         badge: 'bg-gray-500'
       },
       completed: { 
-        bg: 'bg-blue-100', 
-        text: 'text-blue-700',
+        bg: 'bg-gray-300', 
+        text: 'text-gray-900',
         icon: '🎉',
-        badge: 'bg-blue-500'
+        badge: 'bg-black'
       }
     };
     return styles[status] || styles.active;
@@ -297,20 +344,20 @@ const CCList = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="relative">
-            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
-            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-purple-400 rounded-full animate-ping mx-auto"></div>
+            <div className="w-16 h-16 border-4 border-gray-200 border-t-gray-600 rounded-full animate-spin mx-auto"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-gray-400 rounded-full animate-ping mx-auto"></div>
           </div>
-          <p className="mt-4 text-slate-600 font-medium">Loading your content calendar...</p>
+          <p className="mt-4 text-gray-600 font-medium">Loading your content calendar...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section - No Shadows */}
         <div className="mb-6 md:mb-8">
@@ -327,7 +374,7 @@ const CCList = () => {
               {(isManager || user.role === 'client') && (
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="self-start group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2 text-sm md:text-base"
+                  className="self-start group relative bg-black hover:bg-gray-800 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2 text-sm md:text-base"
                 >
                   <Plus className="h-4 w-4 md:h-5 md:w-5 group-hover:rotate-90 transition-transform duration-200" />
                   Add Content
@@ -423,12 +470,58 @@ const CCList = () => {
                       placeholder="Any specific requirements or additional notes..."
                     />
                   </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Google Drive Link (Optional)</label>
+                    <input
+                      type="url"
+                      value={formData.google_drive_link}
+                      onChange={(e) => setFormData({...formData, google_drive_link: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                      placeholder="https://drive.google.com/..."
+                    />
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Upload Media (Optional)</label>
+                    <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-slate-400 transition-colors">
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        accept="image/*,video/*"
+                        multiple
+                        className="hidden"
+                        id="media-upload"
+                      />
+                      <label htmlFor="media-upload" className="cursor-pointer">
+                        <div className="flex flex-col items-center">
+                          <Upload className="h-8 w-8 text-slate-400 mb-2" />
+                          <p className="text-slate-600 font-medium">
+                            {selectedFiles.length ? `${selectedFiles.length} file(s) selected` : 'Click to upload images or videos'}
+                          </p>
+                          <p className="text-slate-500 text-sm mt-1">
+                            Supports: JPG, PNG, GIF, MP4, MOV, AVI, WEBM (Max 100MB)
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                    {selectedFiles.length > 0 && (
+                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-left">
+                        <p className="text-green-700 text-sm font-semibold">Selected files:</p>
+                        <ul className="text-green-700 text-sm list-disc pl-5">
+                          {selectedFiles.map((f, i) => (
+                            <li key={i}>✓ {f.name} ({(f.size / (1024 * 1024)).toFixed(2)}MB)</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <button 
                     type="submit" 
-                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transform hover:scale-105 transition-all duration-200"
+                    className="flex-1 bg-black hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-xl transform hover:scale-105 transition-all duration-200"
                   >
                     Create Content Item
                   </button>
@@ -539,6 +632,92 @@ const CCList = () => {
                   </div>
                 )}
 
+                {/* Media preview */}
+                {(item.media_urls && item.media_urls.length > 0) ? (
+                  <div className="mb-4">
+                    <div className="relative">
+                      {/* Show first media file as preview */}
+                      {item.media_urls[0].match(/\.(mp4|mov|avi|webm)$/i) ? (
+                        <div className="relative">
+                          <video 
+                            className="w-full h-24 object-cover rounded-lg"
+                            muted
+                            onMouseOver={(e) => e.target.play()}
+                            onMouseOut={(e) => e.target.pause()}
+                          >
+                            <source src={item.media_urls[0]} type="video/mp4" />
+                          </video>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-black bg-opacity-50 rounded-full p-1">
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <img 
+                          src={item.media_urls[0]} 
+                          alt="Media preview" 
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                      )}
+                      <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                        {item.media_urls.length > 1 ? `📎 ${item.media_urls.length}` : '📎'}
+                      </div>
+                    </div>
+                  </div>
+                ) : (item.image_url || item.file_url) && (
+                  <div className="mb-4">
+                    <div className="relative">
+                      {(item.image_url || item.file_url).includes('.mp4') || 
+                       (item.image_url || item.file_url).includes('.mov') || 
+                       (item.image_url || item.file_url).includes('.avi') || 
+                       (item.image_url || item.file_url).includes('.webm') ? (
+                        <div className="relative">
+                          <video 
+                            className="w-full h-24 object-cover rounded-lg"
+                            muted
+                            onMouseOver={(e) => e.target.play()}
+                            onMouseOut={(e) => e.target.pause()}
+                          >
+                            <source src={item.image_url || item.file_url} type="video/mp4" />
+                          </video>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-black bg-opacity-50 rounded-full p-1">
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <img 
+                          src={item.image_url || item.file_url} 
+                          alt="Media preview" 
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                      )}
+                      <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                        📎
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Google Drive link indicator */}
+                {item.google_drive_link && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 rounded-lg p-2">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">Google Drive:</span>
+                      <span className="truncate">{item.google_drive_link}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Footer with Actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                   <span className="text-xs text-slate-500">
@@ -636,6 +815,80 @@ const CCList = () => {
                   </div>
                 )}
 
+                {/* Google Drive Link */}
+                {selectedItem.google_drive_link && (
+                  <div className="bg-green-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-green-700 mb-3">Google Drive Link</h4>
+                    <a 
+                      href={selectedItem.google_drive_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-green-800 underline hover:text-green-600 transition-colors"
+                    >
+                      {selectedItem.google_drive_link}
+                    </a>
+                  </div>
+                )}
+
+                {/* Media Display */}
+                {(selectedItem.media_urls && selectedItem.media_urls.length > 0) ? (
+                  <div className="bg-purple-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-purple-700 mb-3">📎 Attached Media</h4>
+                    <div className="flex flex-wrap gap-4">
+                      {selectedItem.media_urls.map((url, idx) => (
+                        url.match(/\.(mp4|mov|avi|webm)$/i) ? (
+                          <video 
+                            key={idx}
+                            controls 
+                            className="max-w-xs h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          >
+                            <source src={url} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <img 
+                            key={idx}
+                            src={url}
+                            alt={`CC item media ${idx + 1}`}
+                            className="max-w-xs h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          />
+                        )
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  (selectedItem.image_url || selectedItem.file_url) && (
+                    <div className="bg-purple-50 rounded-xl p-4">
+                      <h4 className="text-sm font-semibold text-purple-700 mb-3">📎 Attached Media</h4>
+                      <div className="relative">
+                        {(selectedItem.image_url || selectedItem.file_url).includes('.mp4') || 
+                         (selectedItem.image_url || selectedItem.file_url).includes('.mov') || 
+                         (selectedItem.image_url || selectedItem.file_url).includes('.avi') || 
+                         (selectedItem.image_url || selectedItem.file_url).includes('.webm') ? (
+                          <video 
+                            controls 
+                            className="max-w-full h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          >
+                            <source src={selectedItem.image_url || selectedItem.file_url} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <img 
+                            src={selectedItem.image_url || selectedItem.file_url} 
+                            alt="CC item media" 
+                            className="max-w-full h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          />
+                        )}
+                        <p className="text-xs text-purple-600 mt-1">Media file attached to this content item</p>
+                      </div>
+                    </div>
+                  )
+                )}
+
                 {/* Metadata */}
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
                   <div>
@@ -701,7 +954,7 @@ const CCList = () => {
               {(isManager || user.role === 'client') && (
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  className="bg-black hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                 >
                   Create First Item
                 </button>

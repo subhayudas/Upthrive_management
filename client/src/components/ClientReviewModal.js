@@ -131,7 +131,7 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
                 Your Decision *
               </label>
               <div className="space-y-2">
-                <label className="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition-colors">
+                <label className="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                   <input
                     type="radio"
                     name="action"
@@ -140,14 +140,14 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
                     onChange={(e) => setAction(e.target.value)}
                     className="mr-2 mt-1"
                   />
-                  <Check className="w-4 h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <Check className="w-4 h-4 text-gray-700 mr-2 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    <div className="font-medium text-green-800 text-sm">Approve</div>
-                    <div className="text-xs text-green-600">I'm satisfied with the work. Mark as completed.</div>
+                    <div className="font-medium text-gray-800 text-sm">Approve</div>
+                    <div className="text-xs text-gray-600">I'm satisfied with the work. Mark as completed.</div>
                   </div>
                 </label>
                 
-                <label className="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-red-50 transition-colors">
+                <label className="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                   <input
                     type="radio"
                     name="action"
@@ -156,10 +156,10 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
                     onChange={(e) => setAction(e.target.value)}
                     className="mr-2 mt-1"
                   />
-                  <XCircle className="w-4 h-4 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <XCircle className="w-4 h-4 text-gray-700 mr-2 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    <div className="font-medium text-red-800 text-sm">Reject</div>
-                    <div className="text-xs text-red-600">Request changes. Send back for revision.</div>
+                    <div className="font-medium text-gray-800 text-sm">Reject</div>
+                    <div className="text-xs text-gray-600">Request changes. Send back for revision.</div>
                   </div>
                 </label>
               </div>
@@ -198,8 +198,8 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
 
             {/* WhatsApp Notifications */}
             {action === 'approve' && request?.manager_phone && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs text-green-800 mb-2">
+              <div className="p-3 bg-gray-100 border border-gray-300 rounded-lg">
+                <p className="text-xs text-gray-800 mb-2">
                   📱 Notify manager via WhatsApp:
                 </p>
                 <WhatsAppButton
@@ -217,8 +217,8 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
             )}
 
             {action === 'reject' && request?.assigned_editor?.phone_number && (
-              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <p className="text-xs text-orange-800 mb-2">
+              <div className="p-3 bg-gray-100 border border-gray-300 rounded-lg">
+                <p className="text-xs text-gray-800 mb-2">
                   📱 Notify editor via WhatsApp:
                 </p>
                 <WhatsAppButton
@@ -242,9 +242,9 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
                 disabled={loading || !action}
                 className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm ${
                   action === 'approve' 
-                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    ? 'bg-black hover:bg-gray-800 text-white' 
                     : action === 'reject'
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    ? 'bg-gray-700 hover:bg-gray-800 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >

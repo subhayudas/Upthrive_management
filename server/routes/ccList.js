@@ -1,7 +1,27 @@
 const express = require('express');
-const { supabase } = require('../config/supabase');
+const multer = require('multer');
+const path = require('path');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 const { authenticateUser, requireRole, requireClientAccess } = require('../middleware/auth');
 const router = express.Router();
+
+// Configure multer for image and video uploads
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|webm/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only images and videos are allowed'));
+    }
+  }
+});
 
 // Get CC list for a specific client
 router.get('/:clientId', authenticateUser, async (req, res) => {
@@ -35,6 +55,10 @@ router.get('/:clientId', authenticateUser, async (req, res) => {
         return res.status(500).json({ error: error.message });
       }
 
+      console.log('CC List data for client:', data);
+      console.log('First item media_urls:', data?.[0]?.media_urls);
+      console.log('First item image_url:', data?.[0]?.image_url);
+
       return res.json({ ccList: data || [] });
     }
 
@@ -51,6 +75,10 @@ router.get('/:clientId', authenticateUser, async (req, res) => {
         return res.status(500).json({ error: error.message });
       }
 
+      console.log('CC List data for manager/editor:', data);
+      console.log('First item media_urls:', data?.[0]?.media_urls);
+      console.log('First item image_url:', data?.[0]?.image_url);
+
       return res.json({ ccList: data || [] });
     }
 
@@ -63,11 +91,19 @@ router.get('/:clientId', authenticateUser, async (req, res) => {
   }
 });
 
-// Create new CC list item (managers only) - FIXED
-router.post('/:clientId', authenticateUser, async (req, res) => {
+// Create new CC list item (supports multiple media)
+router.post('/:clientId', authenticateUser, upload.array('media', 10), async (req, res) => {
   try {
     const { clientId } = req.params;
-    const { title, description, content_type, requirements, priority } = req.body;
+    const { title, description, content_type, requirements, priority, google_drive_link } = req.body;
+    let fileUrl = null;
+    let mediaUrls = [];
+
+    console.log('=== CC LIST FILE UPLOAD DEBUG ===');
+    console.log('User:', req.user);
+    console.log('ClientId from params:', clientId);
+    console.log('Request body:', req.body);
+    console.log('Request files:', req.files?.map(f => f.originalname));
 
     if (!title || !description) {
       return res.status(400).json({ error: 'Title and description are required' });
@@ -76,18 +112,20 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
     // For clients, verify they're creating items for their own client_id
     if (req.user.role === 'client') {
       // Get the user's client_id from their profile
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .select('client_id')
         .eq('id', req.user.id)
         .single();
 
       if (profileError || !profile?.client_id) {
+        console.error('Client profile error:', profileError);
         return res.status(403).json({ error: 'Client profile not found' });
       }
 
       // Verify they're creating items for their own client
       if (profile.client_id !== clientId) {
+        console.error('Client trying to create for wrong client_id:', profile.client_id, 'vs', clientId);
         return res.status(403).json({ error: 'Access denied' });
       }
     } else if (req.user.role === 'manager') {
@@ -96,8 +134,35 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Create CC list item
-    const { data: ccItem, error: ccError } = await supabase
+    // Upload files to Supabase Storage if provided
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const fileName = `${req.user.id}/cc-list/${Date.now()}-${file.originalname}`;
+        console.log('Attempting to upload CC list file:', fileName);
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from('request-files')
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false
+          });
+        if (uploadError) {
+          console.error('CC List file upload error:', uploadError);
+          return res.status(500).json({ 
+            error: 'Failed to upload file',
+            details: uploadError.message 
+          });
+        }
+        const { data: urlData } = supabaseAdmin.storage
+          .from('request-files')
+          .getPublicUrl(fileName);
+        mediaUrls.push(urlData.publicUrl);
+      }
+      fileUrl = mediaUrls[0] || null;
+      console.log('CC List files uploaded successfully:', mediaUrls);
+    }
+
+    // Create CC list item using admin client to bypass RLS
+    const { data: ccItem, error: ccError } = await supabaseAdmin
       .from('cc_list')
       .insert({
         client_id: clientId,
@@ -107,6 +172,10 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
         requirements: requirements || '',
         priority: priority || 'medium',
         status: 'active',
+        image_url: fileUrl,
+        file_url: fileUrl,
+        media_urls: mediaUrls.length ? mediaUrls : null,
+        google_drive_link: google_drive_link || null,
         created_by: req.user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -119,8 +188,8 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
       return res.status(500).json({ error: ccError.message });
     }
 
-    // Create corresponding request
-    const { data: request, error: reqError } = await supabase
+    // Create corresponding request using admin client
+    const { data: request, error: reqError } = await supabaseAdmin
       .from('requests')
       .insert({
         client_id: clientId,
@@ -129,6 +198,10 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
         content_type: content_type || 'post',
         status: 'pending_manager_review',
         cc_list_id: ccItem.id,
+        image_url: fileUrl,
+        file_url: fileUrl,
+        media_urls: mediaUrls.length ? mediaUrls : null,
+        google_drive_link: google_drive_link || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -148,23 +221,72 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
   }
 });
 
-// Update CC list item (managers only)
-router.put('/:clientId/:itemId', authenticateUser, requireRole(['manager']), async (req, res) => {
+// Update CC list item (supports multiple media)
+router.put('/:clientId/:itemId', authenticateUser, requireRole(['manager']), upload.array('media', 10), async (req, res) => {
   try {
     const { clientId, itemId } = req.params;
-    const { title, description, content_type, requirements, priority, status } = req.body;
+    const { title, description, content_type, requirements, priority, status, google_drive_link } = req.body;
+    let fileUrl = null;
+    let mediaUrls = [];
+
+    console.log('=== CC LIST UPDATE FILE UPLOAD DEBUG ===');
+    console.log('Request body:', req.body);
+    console.log('Request files:', req.files?.map(f => f.originalname));
+
+    // Upload files to Supabase Storage if provided
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const fileName = `${req.user.id}/cc-list/${Date.now()}-${file.originalname}`;
+        console.log('Attempting to upload CC list update file:', fileName);
+        const { error: uploadError } = await supabase.storage
+          .from('request-files')
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false
+          });
+        if (uploadError) {
+          console.error('CC List update file upload error:', uploadError);
+          return res.status(500).json({ 
+            error: 'Failed to upload file',
+            details: uploadError.message 
+          });
+        }
+        const { data: urlData } = supabase.storage
+          .from('request-files')
+          .getPublicUrl(fileName);
+        mediaUrls.push(urlData.publicUrl);
+      }
+      fileUrl = mediaUrls[0] || null;
+      console.log('CC List update files uploaded successfully:', mediaUrls);
+    }
+
+    const updateData = {
+      title,
+      description,
+      content_type,
+      requirements,
+      priority,
+      status,
+      updated_at: new Date().toISOString()
+    };
+
+    // Add file URLs if new files were uploaded
+    if (fileUrl) {
+      updateData.image_url = fileUrl;
+      updateData.file_url = fileUrl;
+    }
+    if (mediaUrls.length) {
+      updateData.media_urls = mediaUrls;
+    }
+
+    // Add Google Drive link if provided
+    if (google_drive_link !== undefined) {
+      updateData.google_drive_link = google_drive_link || null;
+    }
 
     const { data, error } = await supabase
       .from('cc_list')
-      .update({
-        title,
-        description,
-        content_type,
-        requirements,
-        priority,
-        status,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', itemId)
       .eq('client_id', clientId)
       .select()

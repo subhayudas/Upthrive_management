@@ -19,7 +19,7 @@ const Requests = () => {
     content_type: 'post',
     requirements: ''
   });
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -62,17 +62,15 @@ const Requests = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      console.log('Creating request with file:', selectedFile?.name); // Debug log
+      console.log('Creating request with files:', selectedFiles.map(f => f.name)); // Debug log
       
       const formDataToSend = new FormData();
       formDataToSend.append('message', formData.message);
       formDataToSend.append('content_type', formData.content_type);
       formDataToSend.append('requirements', formData.requirements);
       
-      if (selectedFile) {
-        formDataToSend.append('file', selectedFile); // Must match backend multer field name
-        console.log('File type:', selectedFile.type); // Debug log
-        console.log('File size:', selectedFile.size); // Debug log
+      if (selectedFiles.length) {
+        selectedFiles.forEach(file => formDataToSend.append('files', file)); // match backend 'files'
       }
 
       // Debug: Log all form data entries
@@ -95,7 +93,7 @@ const Requests = () => {
         content_type: 'post',
         requirements: ''
       });
-      setSelectedFile(null);
+      setSelectedFiles([]);
       fetchRequests();
     } catch (error) {
       console.error('Error creating request:', error);
@@ -109,25 +107,26 @@ const Requests = () => {
     }
   };
 
-  // Update handleFileChange to accept videos too
+  // Update handleFileChange to accept multiple images/videos
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    
-    if (!file) return;
-    
-    // Check file size (100MB = 100 * 1024 * 1024 bytes)
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
     const maxSize = 100 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('File size must be less than 100MB');
-      return;
+    const valid = [];
+    for (const file of files) {
+      if (file.size > maxSize) {
+        toast.error(`${file.name}: must be < 100MB`);
+        continue;
+      }
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        valid.push(file);
+      } else {
+        toast.error(`${file.name}: invalid type`);
+      }
     }
-    
-    if (file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
-      setSelectedFile(file);
-      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-      toast.success(`${file.type.startsWith('video/') ? 'Video' : 'Image'} selected: ${file.name} (${fileSizeMB}MB)`);
-    } else {
-      toast.error('Please select a valid image or video file');
+    if (valid.length) {
+      setSelectedFiles(valid);
+      toast.success(`Selected ${valid.length} file(s)`);
     }
   };
 
@@ -191,46 +190,46 @@ const Requests = () => {
   const getStatusStyles = (status) => {
     const styles = {
       'pending_manager_review': { 
-        bg: 'bg-yellow-100', 
-        text: 'text-yellow-700',
+        bg: 'bg-gray-100', 
+        text: 'text-gray-800',
         icon: '⏳',
-        badge: 'bg-yellow-500'
+        badge: 'bg-gray-500'
       },
       'assigned_to_editor': { 
-        bg: 'bg-blue-100', 
-        text: 'text-blue-700',
+        bg: 'bg-gray-200', 
+        text: 'text-gray-800',
         icon: '👷',
-        badge: 'bg-blue-500'
+        badge: 'bg-gray-600'
       },
       'submitted_for_review': { 
-        bg: 'bg-purple-100', 
-        text: 'text-purple-700',
+        bg: 'bg-gray-100', 
+        text: 'text-gray-800',
         icon: '📋',
-        badge: 'bg-purple-500'
+        badge: 'bg-gray-500'
       },
       'manager_approved': { 
-        bg: 'bg-green-100', 
-        text: 'text-green-700',
+        bg: 'bg-gray-300', 
+        text: 'text-gray-900',
         icon: '✅',
-        badge: 'bg-green-500'
+        badge: 'bg-gray-700'
       },
       'manager_rejected': { 
-        bg: 'bg-red-100', 
-        text: 'text-red-700',
+        bg: 'bg-gray-100', 
+        text: 'text-gray-700',
         icon: '❌',
-        badge: 'bg-red-500'
+        badge: 'bg-gray-400'
       },
       'client_approved': { 
-        bg: 'bg-emerald-100', 
-        text: 'text-emerald-700',
+        bg: 'bg-black', 
+        text: 'text-white',
         icon: '🎉',
-        badge: 'bg-emerald-500'
+        badge: 'bg-black'
       },
       'client_rejected': { 
-        bg: 'bg-orange-100', 
-        text: 'text-orange-700',
+        bg: 'bg-gray-100', 
+        text: 'text-gray-700',
         icon: '🔄',
-        badge: 'bg-orange-500'
+        badge: 'bg-gray-500'
       },
       'completed': { 
         bg: 'bg-gray-100', 
@@ -246,27 +245,27 @@ const Requests = () => {
     const styles = {
       'post': { 
         icon: FileText, 
-        gradient: 'from-blue-500 to-indigo-600',
-        bg: 'bg-blue-50',
-        text: 'text-blue-700'
+        gradient: 'from-gray-700 to-gray-900',
+        bg: 'bg-gray-50',
+        text: 'text-gray-700'
       },
       'reel': { 
         icon: Zap, 
-        gradient: 'from-purple-500 to-pink-600',
-        bg: 'bg-purple-50',
-        text: 'text-purple-700'
+        gradient: 'from-gray-600 to-gray-800',
+        bg: 'bg-gray-50',
+        text: 'text-gray-700'
       },
       'story': { 
         icon: Clock, 
-        gradient: 'from-orange-500 to-red-600',
-        bg: 'bg-orange-50',
-        text: 'text-orange-700'
+        gradient: 'from-gray-500 to-gray-700',
+        bg: 'bg-gray-50',
+        text: 'text-gray-700'
       },
       'video': { 
         icon: Upload, 
-        gradient: 'from-green-500 to-teal-600',
-        bg: 'bg-green-50',
-        text: 'text-green-700'
+        gradient: 'from-gray-600 to-gray-800',
+        bg: 'bg-gray-50',
+        text: 'text-gray-700'
       }
     };
     return styles[contentType] || styles['post'];
@@ -314,7 +313,7 @@ const Requests = () => {
           <button
             onClick={isMobile ? (e) => handleReviewClickMobile(e, request) : () => handleReviewClick(request)}
             onTouchStart={() => console.log('👆 Review button touched')}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium shadow-lg touch-manipulation"
+            className="bg-black hover:bg-gray-800 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium touch-manipulation"
             style={{ minWidth: '48px', minHeight: '48px' }}
           >
             <Eye className="w-4 h-4" />
@@ -328,7 +327,7 @@ const Requests = () => {
           <button
             onClick={isMobile ? (e) => handleClientReviewClickMobile(e, request) : () => handleClientReviewClick(request)}
             onTouchStart={() => console.log('👆 Client review button touched')}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium shadow-lg touch-manipulation"
+            className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2 min-h-[48px] w-full sm:w-auto transition-all duration-200 font-medium touch-manipulation"
             style={{ minWidth: '48px', minHeight: '48px' }}
           >
             <Eye className="w-4 h-4" />
@@ -385,7 +384,7 @@ const Requests = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8">
         {/* Add pb-20 for mobile bottom navigation clearance */}
         
@@ -412,12 +411,85 @@ const Requests = () => {
                 </span>
               </div>
 
+              {/* Media preview */}
+              {(request.media_urls && request.media_urls.length > 0) ? (
+                <div className="mb-3">
+                  <div className="relative">
+                    {/* Show first media file as preview */}
+                    {request.media_urls[0].match(/\.(mp4|mov|avi|webm)$/i) ? (
+                      <div className="relative">
+                        <video 
+                          className="w-full h-20 object-cover rounded-lg"
+                          muted
+                          onMouseOver={(e) => e.target.play()}
+                          onMouseOut={(e) => e.target.pause()}
+                        >
+                          <source src={request.media_urls[0]} type="video/mp4" />
+                        </video>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-black bg-opacity-50 rounded-full p-1">
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img 
+                        src={request.media_urls[0]} 
+                        alt="Media preview" 
+                        className="w-full h-20 object-cover rounded-lg"
+                      />
+                    )}
+                    <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1.5 py-0.5 rounded">
+                      {request.media_urls.length > 1 ? `📎 ${request.media_urls.length}` : '📎'}
+                    </div>
+                  </div>
+                </div>
+              ) : (request.image_url) && (
+                <div className="mb-3">
+                  <div className="relative">
+                    {request.image_url.includes('.mp4') || 
+                     request.image_url.includes('.mov') || 
+                     request.image_url.includes('.avi') || 
+                     request.image_url.includes('.webm') ? (
+                      <div className="relative">
+                        <video 
+                          className="w-full h-20 object-cover rounded-lg"
+                          muted
+                          onMouseOver={(e) => e.target.play()}
+                          onMouseOut={(e) => e.target.pause()}
+                        >
+                          <source src={request.image_url} type="video/mp4" />
+                        </video>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-black bg-opacity-50 rounded-full p-1">
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img 
+                        src={request.image_url} 
+                        alt="Media preview" 
+                        className="w-full h-20 object-cover rounded-lg"
+                      />
+                    )}
+                    <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1.5 py-0.5 rounded">
+                      📎
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Compact Actions */}
               <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
                 {renderRequestActions(request)}
                 <button
                   onClick={() => handleViewRequestDetails(request)}
-                  className="text-indigo-600 hover:text-indigo-800 text-xs font-medium px-2 py-1 rounded border border-indigo-200 hover:bg-indigo-50 transition-colors"
+                  className="text-black hover:text-gray-800 text-xs font-medium px-2 py-1 rounded border border-gray-200 hover:bg-gray-100 transition-colors"
                 >
                   Details
                 </button>
@@ -486,10 +558,37 @@ const Requests = () => {
                   </div>
                 )}
 
-                {/* Attached File */}
-                {selectedRequestForDetails.image_url && (
+                {/* Attached Media */}
+                {(selectedRequestForDetails.media_urls && selectedRequestForDetails.media_urls.length > 0) ? (
                   <div className="bg-purple-50 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-purple-700 mb-3">Attached File</h4>
+                    <h4 className="text-sm font-semibold text-purple-700 mb-3">📎 Attached Media</h4>
+                    <div className="flex flex-wrap gap-4">
+                      {selectedRequestForDetails.media_urls.map((url, idx) => (
+                        url.match(/\.(mp4|mov|avi|webm)$/i) ? (
+                          <video 
+                            key={idx}
+                            controls 
+                            className="max-w-xs h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          >
+                            <source src={url} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <img 
+                            key={idx}
+                            src={url}
+                            alt={`Request media ${idx + 1}`}
+                            className="max-w-xs h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          />
+                        )
+                      ))}
+                    </div>
+                  </div>
+                ) : selectedRequestForDetails.image_url && (
+                  <div className="bg-purple-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-purple-700 mb-3">📎 Attached File</h4>
                     {selectedRequestForDetails.image_url.includes('.mp4') || selectedRequestForDetails.image_url.includes('.mov') || selectedRequestForDetails.image_url.includes('.avi') || selectedRequestForDetails.image_url.includes('.webm') ? (
                       <video 
                         controls 

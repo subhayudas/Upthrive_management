@@ -23,45 +23,43 @@ const upload = multer({
   }
 });
 
-// Create request from client to manager
-router.post('/', authenticateUser, requireRole(['client']), upload.single('file'), async (req, res) => {
+// Create request from client to manager (supports multiple files)
+router.post('/', authenticateUser, requireRole(['client']), upload.array('files', 10), async (req, res) => {
   try {
     const { message, content_type, requirements } = req.body;
     let fileUrl = null;
+    let mediaUrls = [];
 
     console.log('=== FILE UPLOAD DEBUG ===');
     console.log('User:', req.user);
     console.log('Request body:', req.body);
-    console.log('Request file:', req.file);
+    console.log('Request files:', req.files?.map(f => f.originalname));
 
-    // Upload file to Supabase Storage if provided
-    if (req.file) {
-      const fileName = `${req.user.id}/${Date.now()}-${req.file.originalname}`;
-      
-      console.log('Attempting to upload file:', fileName);
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('request-files')
-        .upload(fileName, req.file.buffer, {
-          contentType: req.file.mimetype,
-          upsert: false
-        });
-
-      if (uploadError) {
-        console.error('Detailed upload error:', uploadError);
-        return res.status(500).json({ 
-          error: 'Failed to upload file',
-          details: uploadError.message 
-        });
+    // Upload files to Supabase Storage if provided
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const fileName = `${req.user.id}/${Date.now()}-${file.originalname}`;
+        console.log('Attempting to upload file:', fileName);
+        const { error: uploadError } = await supabase.storage
+          .from('request-files')
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false
+          });
+        if (uploadError) {
+          console.error('Detailed upload error:', uploadError);
+          return res.status(500).json({ 
+            error: 'Failed to upload file',
+            details: uploadError.message 
+          });
+        }
+        const { data: urlData } = supabase.storage
+          .from('request-files')
+          .getPublicUrl(fileName);
+        mediaUrls.push(urlData.publicUrl);
       }
-
-      // Get the public URL
-      const { data: urlData } = supabase.storage
-        .from('request-files')
-        .getPublicUrl(fileName);
-
-      fileUrl = urlData.publicUrl;
-      console.log('File uploaded successfully:', fileUrl);
+      fileUrl = mediaUrls[0] || null;
+      console.log('Files uploaded successfully:', mediaUrls);
     }
 
     // Get client_id from user's profile
@@ -83,7 +81,8 @@ router.post('/', authenticateUser, requireRole(['client']), upload.single('file'
       message,
       content_type: content_type || 'post',
       requirements: requirements || '',
-      image_url: fileUrl,                  // ✅ Use image_url (existing column)
+      image_url: fileUrl,                  // keep single URL for backward compatibility
+      media_urls: mediaUrls.length ? mediaUrls : null,
       status: 'pending_manager_review',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -139,6 +138,10 @@ router.get('/my-requests', authenticateUser, async (req, res) => {
     if (error) {
       return res.status(500).json({ error: error.message });
     }
+
+    console.log('Requests data:', data);
+    console.log('First request media_urls:', data?.[0]?.media_urls);
+    console.log('First request image_url:', data?.[0]?.image_url);
 
     res.json({ requests: data });
   } catch (error) {
