@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Plus, Edit, Trash2, FileText, Calendar, Clock, Star, Zap, Target, X, Eye } from 'lucide-react'; // Add X and Eye icons
+import { Plus, Edit, Trash2, FileText, Calendar, Clock, Star, Zap, Target, X, Eye, Upload } from 'lucide-react'; // Add X, Eye, and Upload icons
 import toast from 'react-hot-toast';
 
 const CCList = () => {
@@ -17,8 +17,10 @@ const CCList = () => {
     content_type: 'post',
     requirements: '',
     priority: 'medium',
-    status: 'active'
+    status: 'active',
+    google_drive_link: ''
   });
+  const [selectedFile, setSelectedFile] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [clients, setClients] = useState([]);
 
@@ -108,6 +110,28 @@ const CCList = () => {
     }
   };
 
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    
+    if (!file) return;
+    
+    // Check file size (100MB = 100 * 1024 * 1024 bytes)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 100MB');
+      return;
+    }
+    
+    if (file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
+      setSelectedFile(file);
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      toast.success(`${file.type.startsWith('video/') ? 'Video' : 'Image'} selected: ${file.name} (${fileSizeMB}MB)`);
+    } else {
+      toast.error('Please select a valid image or video file');
+    }
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     setShowCreateForm(false);
@@ -128,8 +152,27 @@ const CCList = () => {
         return;
       }
       
-      await axios.post(`/api/cc-list/${clientId}`, formData);
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('content_type', formData.content_type);
+      formDataToSend.append('requirements', formData.requirements);
+      formDataToSend.append('priority', formData.priority);
+      formDataToSend.append('status', formData.status);
+      formDataToSend.append('google_drive_link', formData.google_drive_link);
+      
+      if (selectedFile) {
+        formDataToSend.append('media', selectedFile);
+      }
+
+      await axios.post(`/api/cc-list/${clientId}`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       toast.success('CC item created successfully!');
+      setSelectedFile(null);
       fetchCCList();
     } catch (error) {
       console.error('Error creating CC item:', error);
@@ -423,6 +466,48 @@ const CCList = () => {
                       placeholder="Any specific requirements or additional notes..."
                     />
                   </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Google Drive Link (Optional)</label>
+                    <input
+                      type="url"
+                      value={formData.google_drive_link}
+                      onChange={(e) => setFormData({...formData, google_drive_link: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                      placeholder="https://drive.google.com/..."
+                    />
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Upload Media (Optional)</label>
+                    <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-slate-400 transition-colors">
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        accept="image/*,video/*"
+                        className="hidden"
+                        id="media-upload"
+                      />
+                      <label htmlFor="media-upload" className="cursor-pointer">
+                        <div className="flex flex-col items-center">
+                          <Upload className="h-8 w-8 text-slate-400 mb-2" />
+                          <p className="text-slate-600 font-medium">
+                            {selectedFile ? selectedFile.name : 'Click to upload image or video'}
+                          </p>
+                          <p className="text-slate-500 text-sm mt-1">
+                            Supports: JPG, PNG, GIF, MP4, MOV, AVI, WEBM (Max 100MB)
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                    {selectedFile && (
+                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-green-700 text-sm">
+                          ✓ {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)}MB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -539,6 +624,58 @@ const CCList = () => {
                   </div>
                 )}
 
+                {/* Media preview */}
+                {(item.image_url || item.file_url) && (
+                  <div className="mb-4">
+                    <div className="relative">
+                      {(item.image_url || item.file_url).includes('.mp4') || 
+                       (item.image_url || item.file_url).includes('.mov') || 
+                       (item.image_url || item.file_url).includes('.avi') || 
+                       (item.image_url || item.file_url).includes('.webm') ? (
+                        <div className="relative">
+                          <video 
+                            className="w-full h-24 object-cover rounded-lg"
+                            muted
+                            onMouseOver={(e) => e.target.play()}
+                            onMouseOut={(e) => e.target.pause()}
+                          >
+                            <source src={item.image_url || item.file_url} type="video/mp4" />
+                          </video>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-black bg-opacity-50 rounded-full p-1">
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <img 
+                          src={item.image_url || item.file_url} 
+                          alt="Media preview" 
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                      )}
+                      <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                        {item.image_url || item.file_url ? '📎' : ''}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Google Drive link indicator */}
+                {item.google_drive_link && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 rounded-lg p-2">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">Google Drive:</span>
+                      <span className="truncate">{item.google_drive_link}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Footer with Actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                   <span className="text-xs text-slate-500">
@@ -633,6 +770,53 @@ const CCList = () => {
                   <div className="bg-blue-50 rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-blue-700 mb-3">Requirements & Notes</h4>
                     <p className="text-blue-800 leading-relaxed">{selectedItem.requirements}</p>
+                  </div>
+                )}
+
+                {/* Google Drive Link */}
+                {selectedItem.google_drive_link && (
+                  <div className="bg-green-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-green-700 mb-3">Google Drive Link</h4>
+                    <a 
+                      href={selectedItem.google_drive_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-green-800 underline hover:text-green-600 transition-colors"
+                    >
+                      {selectedItem.google_drive_link}
+                    </a>
+                  </div>
+                )}
+
+                {/* Media Display */}
+                {(selectedItem.image_url || selectedItem.file_url) && (
+                  <div className="bg-purple-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-purple-700 mb-3">📎 Attached Media</h4>
+                    {(selectedItem.image_url || selectedItem.file_url) && (
+                      <div className="mt-2">
+                        {(selectedItem.image_url || selectedItem.file_url).includes('.mp4') || 
+                         (selectedItem.image_url || selectedItem.file_url).includes('.mov') || 
+                         (selectedItem.image_url || selectedItem.file_url).includes('.avi') || 
+                         (selectedItem.image_url || selectedItem.file_url).includes('.webm') ? (
+                          <video 
+                            controls 
+                            className="max-w-full h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          >
+                            <source src={selectedItem.image_url || selectedItem.file_url} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <img 
+                            src={selectedItem.image_url || selectedItem.file_url} 
+                            alt="CC item media" 
+                            className="max-w-full h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          />
+                        )}
+                        <p className="text-xs text-purple-600 mt-1">Media file attached to this content item</p>
+                      </div>
+                    )}
                   </div>
                 )}
 

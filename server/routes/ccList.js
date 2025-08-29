@@ -1,7 +1,27 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
 const { supabase } = require('../config/supabase');
 const { authenticateUser, requireRole, requireClientAccess } = require('../middleware/auth');
 const router = express.Router();
+
+// Configure multer for image and video uploads
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|webm/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only images and videos are allowed'));
+    }
+  }
+});
 
 // Get CC list for a specific client
 router.get('/:clientId', authenticateUser, async (req, res) => {
@@ -64,10 +84,16 @@ router.get('/:clientId', authenticateUser, async (req, res) => {
 });
 
 // Create new CC list item (managers only) - FIXED
-router.post('/:clientId', authenticateUser, async (req, res) => {
+router.post('/:clientId', authenticateUser, upload.single('media'), async (req, res) => {
   try {
     const { clientId } = req.params;
-    const { title, description, content_type, requirements, priority } = req.body;
+    const { title, description, content_type, requirements, priority, google_drive_link } = req.body;
+    let fileUrl = null;
+
+    console.log('=== CC LIST FILE UPLOAD DEBUG ===');
+    console.log('User:', req.user);
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
 
     if (!title || !description) {
       return res.status(400).json({ error: 'Title and description are required' });
@@ -96,6 +122,36 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // Upload file to Supabase Storage if provided
+    if (req.file) {
+      const fileName = `${req.user.id}/cc-list/${Date.now()}-${req.file.originalname}`;
+      
+      console.log('Attempting to upload CC list file:', fileName);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('request-files')
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('CC List file upload error:', uploadError);
+        return res.status(500).json({ 
+          error: 'Failed to upload file',
+          details: uploadError.message 
+        });
+      }
+
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('request-files')
+        .getPublicUrl(fileName);
+
+      fileUrl = urlData.publicUrl;
+      console.log('CC List file uploaded successfully:', fileUrl);
+    }
+
     // Create CC list item
     const { data: ccItem, error: ccError } = await supabase
       .from('cc_list')
@@ -107,6 +163,9 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
         requirements: requirements || '',
         priority: priority || 'medium',
         status: 'active',
+        image_url: fileUrl,
+        file_url: fileUrl,
+        google_drive_link: google_drive_link || null,
         created_by: req.user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -129,6 +188,9 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
         content_type: content_type || 'post',
         status: 'pending_manager_review',
         cc_list_id: ccItem.id,
+        image_url: fileUrl,
+        file_url: fileUrl,
+        google_drive_link: google_drive_link || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -149,22 +211,70 @@ router.post('/:clientId', authenticateUser, async (req, res) => {
 });
 
 // Update CC list item (managers only)
-router.put('/:clientId/:itemId', authenticateUser, requireRole(['manager']), async (req, res) => {
+router.put('/:clientId/:itemId', authenticateUser, requireRole(['manager']), upload.single('media'), async (req, res) => {
   try {
     const { clientId, itemId } = req.params;
-    const { title, description, content_type, requirements, priority, status } = req.body;
+    const { title, description, content_type, requirements, priority, status, google_drive_link } = req.body;
+    let fileUrl = null;
+
+    console.log('=== CC LIST UPDATE FILE UPLOAD DEBUG ===');
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+
+    // Upload file to Supabase Storage if provided
+    if (req.file) {
+      const fileName = `${req.user.id}/cc-list/${Date.now()}-${req.file.originalname}`;
+      
+      console.log('Attempting to upload CC list update file:', fileName);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('request-files')
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('CC List update file upload error:', uploadError);
+        return res.status(500).json({ 
+          error: 'Failed to upload file',
+          details: uploadError.message 
+        });
+      }
+
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('request-files')
+        .getPublicUrl(fileName);
+
+      fileUrl = urlData.publicUrl;
+      console.log('CC List update file uploaded successfully:', fileUrl);
+    }
+
+    const updateData = {
+      title,
+      description,
+      content_type,
+      requirements,
+      priority,
+      status,
+      updated_at: new Date().toISOString()
+    };
+
+    // Add file URL if a new file was uploaded
+    if (fileUrl) {
+      updateData.image_url = fileUrl;
+      updateData.file_url = fileUrl;
+    }
+
+    // Add Google Drive link if provided
+    if (google_drive_link !== undefined) {
+      updateData.google_drive_link = google_drive_link || null;
+    }
 
     const { data, error } = await supabase
       .from('cc_list')
-      .update({
-        title,
-        description,
-        content_type,
-        requirements,
-        priority,
-        status,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', itemId)
       .eq('client_id', clientId)
       .select()
