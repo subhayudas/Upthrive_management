@@ -513,7 +513,7 @@ const CCList = () => {
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <button 
                     type="submit" 
-                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transform hover:scale-105 transition-all duration-200"
+                    className="flex-1 bg-black hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-xl transform hover:scale-105 transition-all duration-200"
                   >
                     Create Content Item
                   </button>
