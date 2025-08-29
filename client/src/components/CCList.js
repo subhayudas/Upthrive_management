@@ -20,7 +20,7 @@ const CCList = () => {
     status: 'active',
     google_drive_link: ''
   });
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
   const [clients, setClients] = useState([]);
 
@@ -92,6 +92,8 @@ const CCList = () => {
       
       const response = await axios.get(`/api/cc-list/${clientId}`);
       console.log('CC List response:', response.data);
+      console.log('First item media_urls:', response.data.ccList[0]?.media_urls);
+      console.log('First item image_url:', response.data.ccList[0]?.image_url);
       setCcList(response.data.ccList);
     } catch (error) {
       console.error('Error fetching CC list:', error);
@@ -112,23 +114,25 @@ const CCList = () => {
 
   // Handle file selection
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    
-    if (!file) return;
-    
-    // Check file size (100MB = 100 * 1024 * 1024 bytes)
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
     const maxSize = 100 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('File size must be less than 100MB');
-      return;
+    const valid = [];
+    for (const file of files) {
+      if (file.size > maxSize) {
+        toast.error(`${file.name}: must be < 100MB`);
+        continue;
+      }
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        valid.push(file);
+      } else {
+        toast.error(`${file.name}: invalid type`);
+      }
     }
-    
-    if (file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
-      setSelectedFile(file);
-      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-      toast.success(`${file.type.startsWith('video/') ? 'Video' : 'Image'} selected: ${file.name} (${fileSizeMB}MB)`);
-    } else {
-      toast.error('Please select a valid image or video file');
+    if (valid.length) {
+      // Append to existing files instead of replacing
+      setSelectedFiles(prev => [...prev, ...valid]);
+      toast.success(`Selected ${valid.length} file(s)`);
     }
   };
 
@@ -162,8 +166,8 @@ const CCList = () => {
       formDataToSend.append('status', formData.status);
       formDataToSend.append('google_drive_link', formData.google_drive_link);
       
-      if (selectedFile) {
-        formDataToSend.append('media', selectedFile);
+      if (selectedFiles.length) {
+        selectedFiles.forEach(file => formDataToSend.append('media', file));
       }
 
       await axios.post(`/api/cc-list/${clientId}`, formDataToSend, {
@@ -172,7 +176,7 @@ const CCList = () => {
         },
       });
       toast.success('CC item created successfully!');
-      setSelectedFile(null);
+      setSelectedFiles([]);
       fetchCCList();
     } catch (error) {
       console.error('Error creating CC item:', error);
@@ -485,6 +489,7 @@ const CCList = () => {
                         type="file"
                         onChange={handleFileChange}
                         accept="image/*,video/*"
+                        multiple
                         className="hidden"
                         id="media-upload"
                       />
@@ -492,7 +497,7 @@ const CCList = () => {
                         <div className="flex flex-col items-center">
                           <Upload className="h-8 w-8 text-slate-400 mb-2" />
                           <p className="text-slate-600 font-medium">
-                            {selectedFile ? selectedFile.name : 'Click to upload image or video'}
+                            {selectedFiles.length ? `${selectedFiles.length} file(s) selected` : 'Click to upload images or videos'}
                           </p>
                           <p className="text-slate-500 text-sm mt-1">
                             Supports: JPG, PNG, GIF, MP4, MOV, AVI, WEBM (Max 100MB)
@@ -500,11 +505,14 @@ const CCList = () => {
                         </div>
                       </label>
                     </div>
-                    {selectedFile && (
-                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-green-700 text-sm">
-                          ✓ {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)}MB)
-                        </p>
+                    {selectedFiles.length > 0 && (
+                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-left">
+                        <p className="text-green-700 text-sm font-semibold">Selected files:</p>
+                        <ul className="text-green-700 text-sm list-disc pl-5">
+                          {selectedFiles.map((f, i) => (
+                            <li key={i}>✓ {f.name} ({(f.size / (1024 * 1024)).toFixed(2)}MB)</li>
+                          ))}
+                        </ul>
                       </div>
                     )}
                   </div>
@@ -625,7 +633,41 @@ const CCList = () => {
                 )}
 
                 {/* Media preview */}
-                {(item.image_url || item.file_url) && (
+                {(item.media_urls && item.media_urls.length > 0) ? (
+                  <div className="mb-4">
+                    <div className="relative">
+                      {/* Show first media file as preview */}
+                      {item.media_urls[0].match(/\.(mp4|mov|avi|webm)$/i) ? (
+                        <div className="relative">
+                          <video 
+                            className="w-full h-24 object-cover rounded-lg"
+                            muted
+                            onMouseOver={(e) => e.target.play()}
+                            onMouseOut={(e) => e.target.pause()}
+                          >
+                            <source src={item.media_urls[0]} type="video/mp4" />
+                          </video>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-black bg-opacity-50 rounded-full p-1">
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <img 
+                          src={item.media_urls[0]} 
+                          alt="Media preview" 
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                      )}
+                      <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                        {item.media_urls.length > 1 ? `📎 ${item.media_urls.length}` : '📎'}
+                      </div>
+                    </div>
+                  </div>
+                ) : (item.image_url || item.file_url) && (
                   <div className="mb-4">
                     <div className="relative">
                       {(item.image_url || item.file_url).includes('.mp4') || 
@@ -657,7 +699,7 @@ const CCList = () => {
                         />
                       )}
                       <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                        {item.image_url || item.file_url ? '📎' : ''}
+                        📎
                       </div>
                     </div>
                   </div>
@@ -789,11 +831,38 @@ const CCList = () => {
                 )}
 
                 {/* Media Display */}
-                {(selectedItem.image_url || selectedItem.file_url) && (
+                {(selectedItem.media_urls && selectedItem.media_urls.length > 0) ? (
                   <div className="bg-purple-50 rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-purple-700 mb-3">📎 Attached Media</h4>
-                    {(selectedItem.image_url || selectedItem.file_url) && (
-                      <div className="mt-2">
+                    <div className="flex flex-wrap gap-4">
+                      {selectedItem.media_urls.map((url, idx) => (
+                        url.match(/\.(mp4|mov|avi|webm)$/i) ? (
+                          <video 
+                            key={idx}
+                            controls 
+                            className="max-w-xs h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          >
+                            <source src={url} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <img 
+                            key={idx}
+                            src={url}
+                            alt={`CC item media ${idx + 1}`}
+                            className="max-w-xs h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          />
+                        )
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  (selectedItem.image_url || selectedItem.file_url) && (
+                    <div className="bg-purple-50 rounded-xl p-4">
+                      <h4 className="text-sm font-semibold text-purple-700 mb-3">📎 Attached Media</h4>
+                      <div className="relative">
                         {(selectedItem.image_url || selectedItem.file_url).includes('.mp4') || 
                          (selectedItem.image_url || selectedItem.file_url).includes('.mov') || 
                          (selectedItem.image_url || selectedItem.file_url).includes('.avi') || 
@@ -816,8 +885,8 @@ const CCList = () => {
                         )}
                         <p className="text-xs text-purple-600 mt-1">Media file attached to this content item</p>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )
                 )}
 
                 {/* Metadata */}

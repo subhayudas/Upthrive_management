@@ -19,7 +19,7 @@ const Requests = () => {
     content_type: 'post',
     requirements: ''
   });
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -62,17 +62,15 @@ const Requests = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      console.log('Creating request with file:', selectedFile?.name); // Debug log
+      console.log('Creating request with files:', selectedFiles.map(f => f.name)); // Debug log
       
       const formDataToSend = new FormData();
       formDataToSend.append('message', formData.message);
       formDataToSend.append('content_type', formData.content_type);
       formDataToSend.append('requirements', formData.requirements);
       
-      if (selectedFile) {
-        formDataToSend.append('file', selectedFile); // Must match backend multer field name
-        console.log('File type:', selectedFile.type); // Debug log
-        console.log('File size:', selectedFile.size); // Debug log
+      if (selectedFiles.length) {
+        selectedFiles.forEach(file => formDataToSend.append('files', file)); // match backend 'files'
       }
 
       // Debug: Log all form data entries
@@ -95,7 +93,7 @@ const Requests = () => {
         content_type: 'post',
         requirements: ''
       });
-      setSelectedFile(null);
+      setSelectedFiles([]);
       fetchRequests();
     } catch (error) {
       console.error('Error creating request:', error);
@@ -109,25 +107,26 @@ const Requests = () => {
     }
   };
 
-  // Update handleFileChange to accept videos too
+  // Update handleFileChange to accept multiple images/videos
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    
-    if (!file) return;
-    
-    // Check file size (100MB = 100 * 1024 * 1024 bytes)
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
     const maxSize = 100 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('File size must be less than 100MB');
-      return;
+    const valid = [];
+    for (const file of files) {
+      if (file.size > maxSize) {
+        toast.error(`${file.name}: must be < 100MB`);
+        continue;
+      }
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        valid.push(file);
+      } else {
+        toast.error(`${file.name}: invalid type`);
+      }
     }
-    
-    if (file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
-      setSelectedFile(file);
-      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-      toast.success(`${file.type.startsWith('video/') ? 'Video' : 'Image'} selected: ${file.name} (${fileSizeMB}MB)`);
-    } else {
-      toast.error('Please select a valid image or video file');
+    if (valid.length) {
+      setSelectedFiles(valid);
+      toast.success(`Selected ${valid.length} file(s)`);
     }
   };
 
@@ -412,6 +411,79 @@ const Requests = () => {
                 </span>
               </div>
 
+              {/* Media preview */}
+              {(request.media_urls && request.media_urls.length > 0) ? (
+                <div className="mb-3">
+                  <div className="relative">
+                    {/* Show first media file as preview */}
+                    {request.media_urls[0].match(/\.(mp4|mov|avi|webm)$/i) ? (
+                      <div className="relative">
+                        <video 
+                          className="w-full h-20 object-cover rounded-lg"
+                          muted
+                          onMouseOver={(e) => e.target.play()}
+                          onMouseOut={(e) => e.target.pause()}
+                        >
+                          <source src={request.media_urls[0]} type="video/mp4" />
+                        </video>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-black bg-opacity-50 rounded-full p-1">
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img 
+                        src={request.media_urls[0]} 
+                        alt="Media preview" 
+                        className="w-full h-20 object-cover rounded-lg"
+                      />
+                    )}
+                    <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1.5 py-0.5 rounded">
+                      {request.media_urls.length > 1 ? `📎 ${request.media_urls.length}` : '📎'}
+                    </div>
+                  </div>
+                </div>
+              ) : (request.image_url) && (
+                <div className="mb-3">
+                  <div className="relative">
+                    {request.image_url.includes('.mp4') || 
+                     request.image_url.includes('.mov') || 
+                     request.image_url.includes('.avi') || 
+                     request.image_url.includes('.webm') ? (
+                      <div className="relative">
+                        <video 
+                          className="w-full h-20 object-cover rounded-lg"
+                          muted
+                          onMouseOver={(e) => e.target.play()}
+                          onMouseOut={(e) => e.target.pause()}
+                        >
+                          <source src={request.image_url} type="video/mp4" />
+                        </video>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-black bg-opacity-50 rounded-full p-1">
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img 
+                        src={request.image_url} 
+                        alt="Media preview" 
+                        className="w-full h-20 object-cover rounded-lg"
+                      />
+                    )}
+                    <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1.5 py-0.5 rounded">
+                      📎
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Compact Actions */}
               <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
                 {renderRequestActions(request)}
@@ -486,10 +558,37 @@ const Requests = () => {
                   </div>
                 )}
 
-                {/* Attached File */}
-                {selectedRequestForDetails.image_url && (
+                {/* Attached Media */}
+                {(selectedRequestForDetails.media_urls && selectedRequestForDetails.media_urls.length > 0) ? (
                   <div className="bg-purple-50 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-purple-700 mb-3">Attached File</h4>
+                    <h4 className="text-sm font-semibold text-purple-700 mb-3">📎 Attached Media</h4>
+                    <div className="flex flex-wrap gap-4">
+                      {selectedRequestForDetails.media_urls.map((url, idx) => (
+                        url.match(/\.(mp4|mov|avi|webm)$/i) ? (
+                          <video 
+                            key={idx}
+                            controls 
+                            className="max-w-xs h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          >
+                            <source src={url} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <img 
+                            key={idx}
+                            src={url}
+                            alt={`Request media ${idx + 1}`}
+                            className="max-w-xs h-auto rounded-lg shadow-md border-2 border-purple-200"
+                            style={{ maxHeight: '300px' }}
+                          />
+                        )
+                      ))}
+                    </div>
+                  </div>
+                ) : selectedRequestForDetails.image_url && (
+                  <div className="bg-purple-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-purple-700 mb-3">📎 Attached File</h4>
                     {selectedRequestForDetails.image_url.includes('.mp4') || selectedRequestForDetails.image_url.includes('.mov') || selectedRequestForDetails.image_url.includes('.avi') || selectedRequestForDetails.image_url.includes('.webm') ? (
                       <video 
                         controls 
