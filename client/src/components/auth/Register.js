@@ -16,7 +16,6 @@ const GlassInputWrapper = ({ children }) => (
 // Testimonial Card Component
 const TestimonialCard = ({ testimonial, delay }) => (
   <div className={`animate-testimonial ${delay} flex items-start gap-3 rounded-3xl bg-white/40 dark:bg-zinc-800/40 backdrop-blur-xl border border-white/10 p-5 w-64`}>
-    <img src={testimonial.avatarSrc} className="h-10 w-10 object-cover rounded-2xl" alt="avatar" />
     <div className="text-sm leading-snug">
       <p className="flex items-center gap-1 font-medium text-gray-900">{testimonial.name}</p>
       <p className="text-gray-600">{testimonial.handle}</p>
@@ -53,19 +52,16 @@ const Register = () => {
   // Sample testimonials for the right side
   const testimonials = [
     {
-      avatarSrc: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
       name: "Alex Rodriguez",
       handle: "@alexr",
-      text: "Joining this platform was the best decision for our team. The collaboration features are amazing!"
+      text: "The user experience is incredible. Everything is so intuitive and well-designed."
     },
     {
-      avatarSrc: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
       name: "Lisa Wang",
       handle: "@lisaw",
       text: "The user experience is incredible. Everything is so intuitive and well-designed."
     },
     {
-      avatarSrc: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
       name: "David Kim",
       handle: "@davidk",
       text: "Perfect for managing our creative projects. Highly recommend to anyone!"
@@ -267,7 +263,7 @@ const Register = () => {
       <section className="hidden md:block flex-1 relative p-4">
         <div className="animate-slide-right animate-delay-300 absolute inset-4 rounded-3xl bg-cover bg-center" 
              style={{ 
-               backgroundImage: `url(https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80)`,
+               backgroundImage: `url(/signinsidepic.png)`,
                backgroundSize: 'cover',
                backgroundPosition: 'center'
              }}>
