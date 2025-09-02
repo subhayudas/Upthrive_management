@@ -392,7 +392,7 @@ const Requests = () => {
         <div className="space-y-2 sm:space-y-4 pb-20 md:pb-0">
           {/* Add extra bottom padding for mobile */}
           {requests.map(request => (
-            <div key={request.id} className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4 transform transition-all duration-200 hover:scale-[1.02]">
+            <div key={request.id} className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/60 p-3 sm:p-4 transform transition-all duration-200 hover:scale-[1.02]">
               {/* Compact Header */}
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2 flex-1 min-w-0">

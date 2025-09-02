@@ -145,7 +145,7 @@ const Tasks = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header - No Shadows */}
         <div className="mb-8">
-          <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 p-8">
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/60 p-8">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
               My Tasks
             </h1>
@@ -158,7 +158,7 @@ const Tasks = () => {
         {/* Tasks Grid - Remove Shadows */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {tasks.map(task => (
-            <div key={task.id} className="bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 p-6 transform transition-all duration-200 hover:scale-[1.02]">
+            <div key={task.id} className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/60 p-6 transform transition-all duration-200 hover:scale-[1.02]">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -278,7 +278,7 @@ const Tasks = () => {
       {/* Submit Work Modal */}
       {showSubmitForm && selectedTask && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md border border-gray-200">
             <h2 className="text-lg font-semibold mb-4">Submit Completed Work</h2>
             
             <div className="mb-4 p-3 bg-gray-50 rounded">

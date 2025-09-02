@@ -8,14 +8,14 @@ import { Eye, EyeOff } from 'lucide-react';
 
 // Glass Input Wrapper Component
 const GlassInputWrapper = ({ children }) => (
-  <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-sm transition-colors focus-within:border-violet-400/70 focus-within:bg-violet-500/10">
+          <div className="rounded-2xl border border-gray-200/60 bg-white/5 backdrop-blur-sm transition-colors focus-within:border-violet-400/70 focus-within:bg-violet-500/10">
     {children}
   </div>
 );
 
 // Testimonial Card Component
 const TestimonialCard = ({ testimonial, delay }) => (
-  <div className={`animate-testimonial ${delay} flex items-start gap-3 rounded-3xl bg-white/40 dark:bg-zinc-800/40 backdrop-blur-xl border border-white/10 p-5 w-64`}>
+  <div className={`animate-testimonial ${delay} flex items-start gap-3 rounded-3xl bg-white/40 dark:bg-zinc-800/40 backdrop-blur-xl border border-gray-200/60 p-5 w-64`}>
     <div className="text-sm leading-snug">
       <p className="flex items-center gap-1 font-medium text-gray-900">{testimonial.name}</p>
       <p className="text-gray-600">{testimonial.handle}</p>

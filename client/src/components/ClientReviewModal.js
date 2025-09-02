@@ -56,7 +56,7 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
-      <div className="bg-white rounded-lg w-full max-w-sm sm:max-w-md md:max-w-2xl max-h-[95vh] overflow-y-auto mx-2">
+      <div className="bg-white rounded-lg w-full max-w-sm sm:max-w-md md:max-w-2xl max-h-[95vh] overflow-y-auto mx-2 border border-gray-200">
         {/* Header */}
         <div className="flex justify-between items-center p-3 md:p-6 border-b border-gray-200 sticky top-0 bg-white">
           <h2 className="text-base md:text-xl font-semibold text-gray-900">Review Final Work</h2>

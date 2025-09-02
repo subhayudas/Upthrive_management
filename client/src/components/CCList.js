@@ -361,7 +361,7 @@ const CCList = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section - No Shadows */}
         <div className="mb-6 md:mb-8">
-          <div className="bg-white/70 backdrop-blur-sm rounded-xl md:rounded-2xl border border-white/20 p-4 md:p-8">
+          <div className="bg-white/70 backdrop-blur-sm rounded-xl md:rounded-2xl border border-gray-200/60 p-4 md:p-8">
             <div className="flex flex-col gap-4">
               <div>
                 <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
@@ -387,7 +387,7 @@ const CCList = () => {
         {/* Create Form - No Shadows */}
         {showCreateForm && (
           <div className="mb-8 animate-fadeIn">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/30 p-8">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
                   <Plus className="h-5 w-5 text-white" />
@@ -584,7 +584,7 @@ const CCList = () => {
             return (
               <div 
                 key={item.id} 
-                className="bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 p-4 sm:p-6 transform transition-all duration-200 hover:scale-[1.02] cursor-pointer"
+                className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/60 p-4 sm:p-6 transform transition-all duration-200 hover:scale-[1.02] cursor-pointer"
                 onClick={() => handleViewDetails(item)} // ✅ Changed from openDetailModal to handleViewDetails
               >
                 {/* Header with Content Type */}
@@ -758,7 +758,7 @@ const CCList = () => {
         {/* Detail Modal - No Shadows */}
         {showDetailModal && selectedItem && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-300">
               {/* Modal Header */}
               <div className="flex justify-between items-center p-6 border-b border-gray-200">
                 <div className="flex items-center gap-3">
@@ -941,7 +941,7 @@ const CCList = () => {
         {/* Empty State - No Shadows */}
         {ccList.length === 0 && (
           <div className="text-center py-16">
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 p-12 max-w-md mx-auto">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/60 p-12 max-w-md mx-auto">
               <div className="w-20 h-20 bg-gradient-to-r from-slate-300 to-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Calendar className="h-10 w-10 text-white" />
               </div>

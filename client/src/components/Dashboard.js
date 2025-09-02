@@ -138,7 +138,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-20 md:pb-6">
         {/* Mobile-Optimized Header - No Shadows */}
         <div className="mb-4 sm:mb-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 p-4 sm:p-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/60 p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm sm:text-base font-bold">
@@ -159,7 +159,7 @@ const Dashboard = () => {
 
         {/* Compact Stats Grid - No Shadows */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/60 p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-black" />
               <div>
@@ -169,7 +169,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/60 p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
               <div>
@@ -179,7 +179,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/60 p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
               <div>
@@ -189,7 +189,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-3 sm:p-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/60 p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <CheckSquare className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
               <div>
@@ -202,7 +202,7 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Compact Quick Actions */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-4 sm:p-5">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/60 p-4 sm:p-5">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Quick Actions</h2>
             <div className="space-y-2 sm:space-y-3">
               {isClient && (
@@ -234,7 +234,7 @@ const Dashboard = () => {
           </div>
 
           {/* Compact Recent Activity */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-white/20 p-4 sm:p-5 mb-20 md:mb-0">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/60 p-4 sm:p-5 mb-20 md:mb-0">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Recent Activity</h2>
             {recentActivity.length > 0 ? (
               <div className="space-y-2 sm:space-y-3">

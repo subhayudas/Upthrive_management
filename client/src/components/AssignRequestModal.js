@@ -83,7 +83,7 @@ const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="bg-white rounded-lg md:rounded-xl w-full max-w-xs sm:max-w-sm md:max-w-md max-h-[95vh] overflow-y-auto mx-2">
+          <div className="bg-white rounded-lg md:rounded-xl w-full max-w-xs sm:max-w-sm md:max-w-md max-h-[95vh] overflow-y-auto mx-2 border border-gray-200">
       <div className="flex justify-between items-center p-3 md:p-6 border-b border-gray-200">
         <h2 className="text-base md:text-lg font-semibold">Assign Request to Editor</h2>
         <button
