@@ -5,11 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 const ProtectedRoute = ({ children, requiredRole = null }) => {
   const { user, loading, isAuthenticated } = useAuth();
 
-  // Bypass auth in development mode
-  if (process.env.NODE_ENV === 'development') {
-    return children;
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
