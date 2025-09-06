@@ -26,16 +26,29 @@ app.use(limiter);
 // Trust proxy for Railway
 app.set('trust proxy', 1);
 
-// CORS configuration - Remove trailing slash
+// CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [
-        'https://upthrive-management.vercel.app', // Remove the trailing /
+        'https://upthrive-management.vercel.app',
+        'https://upthrive-management.vercel.app/',
         'http://localhost:3000'
       ]
     : ['http://localhost:3000'],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 }));
+
+// Handle preflight requests explicitly
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

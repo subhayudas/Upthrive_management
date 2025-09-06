@@ -67,7 +67,21 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
-      const message = error.response?.data?.error || 'Login failed';
+      
+      let message = 'Login failed';
+      
+      if (error.code === 'ERR_NETWORK') {
+        message = 'Network error: Unable to connect to server. Please check your connection.';
+      } else if (error.response?.status === 401) {
+        message = 'Invalid email or password';
+      } else if (error.response?.status === 500) {
+        message = 'Server error. Please try again later.';
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      } else if (error.message) {
+        message = error.message;
+      }
+      
       toast.error(message);
       return { success: false, error: message };
     }
