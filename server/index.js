@@ -26,17 +26,36 @@ app.use(limiter);
 // Trust proxy for Railway
 app.set('trust proxy', 1);
 
-// CORS configuration
+// CORS configuration - More robust for Railway deployment
+const allowedOrigins = [
+  'https://upthrive-management.vercel.app',
+  'https://upthrive-management.vercel.app/',
+  'https://upthrive-management-two.vercel.app',
+  'https://upthrive-management-two.vercel.app/',
+  'http://localhost:3000'
+];
+
+// Log environment info for debugging
+console.log('🔧 Environment Info:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
+console.log('RAILWAY_ENVIRONMENT:', process.env.RAILWAY_ENVIRONMENT);
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'https://upthrive-management.vercel.app',
-        'https://upthrive-management.vercel.app/',
-        'https://upthrive-management-two.vercel.app',
-        'https://upthrive-management-two.vercel.app/',
-        'http://localhost:3000'
-      ]
-    : ['http://localhost:3000'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    console.log('🌐 CORS Request from origin:', origin);
+    
+    if (allowedOrigins.includes(origin)) {
+      console.log('✅ Origin allowed:', origin);
+      return callback(null, true);
+    } else {
+      console.log('❌ Origin blocked:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -45,11 +64,32 @@ app.use(cors({
 
 // Handle preflight requests explicitly
 app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.sendStatus(200);
+  const origin = req.headers.origin;
+  console.log('🔄 Preflight request from:', origin);
+  
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    console.log('✅ Preflight allowed for:', origin);
+    res.sendStatus(200);
+  } else {
+    console.log('❌ Preflight blocked for:', origin);
+    res.status(403).json({ error: 'CORS preflight blocked' });
+  }
+});
+
+// CORS debugging middleware
+app.use((req, res, next) => {
+  console.log('📡 Request Info:');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Origin:', req.headers.origin);
+  console.log('User-Agent:', req.headers['user-agent']);
+  console.log('---');
+  next();
 });
 
 // Body parsing middleware
