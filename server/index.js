@@ -32,6 +32,8 @@ app.use(cors({
     ? [
         'https://upthrive-management.vercel.app',
         'https://upthrive-management.vercel.app/',
+        'https://upthrive-management-two.vercel.app',
+        'https://upthrive-management-two.vercel.app/',
         'http://localhost:3000'
       ]
     : ['http://localhost:3000'],
