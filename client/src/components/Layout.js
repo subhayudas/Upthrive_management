@@ -6,6 +6,7 @@ import {
   FileText,
   MessageSquare,
   CheckSquare,
+  Calendar,
   Menu,
   X,
   LogOut,
@@ -41,6 +42,7 @@ const Layout = ({ children }) => {
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Requests', href: '/requests', icon: MessageSquare },
     { name: 'CC Lists', href: '/cc-list', icon: FileText },
+    { name: 'Calendar', href: '/calendar', icon: Calendar },
     ...(isEditor && !isManager ? [{ name: 'Tasks', href: '/tasks', icon: CheckSquare }] : []),
   ];
 

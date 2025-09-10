@@ -1,5 +1,5 @@
 const express = require('express');
-const { supabase } = require('../config/supabase');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 const { authenticateUser, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
@@ -79,7 +79,7 @@ router.get('/editors', authenticateUser, requireRole(['manager']), async (req, r
 // Get all clients
 router.get('/clients', authenticateUser, requireRole(['manager', 'editor']), async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('role', 'client')

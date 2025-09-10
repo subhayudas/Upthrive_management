@@ -9,6 +9,7 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 // Import your actual components
 import CCList from './components/CCList';
+import Calendar from './components/Calendar';
 import Requests from './components/Requests';
 import Tasks from './components/Tasks';
 
@@ -39,6 +40,13 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <CCList />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/calendar" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Calendar />
                 </Layout>
               </ProtectedRoute>
             } />

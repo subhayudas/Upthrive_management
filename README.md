@@ -109,8 +109,8 @@ npm run install-all
 npm run dev
 
 # Or start them separately:
-npm run server  # Backend on port 5000
-npm run client  # Frontend on port 3000
+node index.js  # Backend on port 5000
+npm run dev  # Frontend on port 3000
 ```
 
 ## 📁 Project Structure

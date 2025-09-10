@@ -44,7 +44,7 @@ router.get('/:clientId', authenticateUser, async (req, res) => {
         return res.status(403).json({ error: 'Access denied' });
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('cc_list')
         .select('*')
         .eq('client_id', clientId)
@@ -62,9 +62,9 @@ router.get('/:clientId', authenticateUser, async (req, res) => {
       return res.json({ ccList: data || [] });
     }
 
-    // For managers AND editors, use regular access with RLS
+    // For managers AND editors, use admin access to bypass RLS
     if (req.user.role === 'manager' || req.user.role === 'editor') {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('cc_list')
         .select('*')
         .eq('client_id', clientId)
@@ -95,7 +95,7 @@ router.get('/:clientId', authenticateUser, async (req, res) => {
 router.post('/:clientId', authenticateUser, upload.array('media', 10), async (req, res) => {
   try {
     const { clientId } = req.params;
-    const { title, description, content_type, requirements, priority, google_drive_link } = req.body;
+    const { title, description, content_type, requirements, priority, google_drive_link, scheduled_date } = req.body;
     let fileUrl = null;
     let mediaUrls = [];
 
@@ -176,6 +176,7 @@ router.post('/:clientId', authenticateUser, upload.array('media', 10), async (re
         file_url: fileUrl,
         media_urls: mediaUrls.length ? mediaUrls : null,
         google_drive_link: google_drive_link || null,
+        scheduled_date: scheduled_date || null,
         created_by: req.user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -225,7 +226,7 @@ router.post('/:clientId', authenticateUser, upload.array('media', 10), async (re
 router.put('/:clientId/:itemId', authenticateUser, requireRole(['manager']), upload.array('media', 10), async (req, res) => {
   try {
     const { clientId, itemId } = req.params;
-    const { title, description, content_type, requirements, priority, status, google_drive_link } = req.body;
+    const { title, description, content_type, requirements, priority, status, google_drive_link, scheduled_date } = req.body;
     let fileUrl = null;
     let mediaUrls = [];
 
@@ -282,6 +283,11 @@ router.put('/:clientId/:itemId', authenticateUser, requireRole(['manager']), upl
     // Add Google Drive link if provided
     if (google_drive_link !== undefined) {
       updateData.google_drive_link = google_drive_link || null;
+    }
+
+    // Add scheduled date if provided
+    if (scheduled_date !== undefined) {
+      updateData.scheduled_date = scheduled_date || null;
     }
 
     const { data, error } = await supabase
@@ -383,7 +389,7 @@ router.delete('/:clientId/:itemId', authenticateUser, async (req, res) => {
 // Get all CC lists (managers and editors only)
 router.get('/', authenticateUser, requireRole(['manager', 'editor']), async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('cc_list')
       .select(`
         *,

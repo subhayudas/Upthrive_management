@@ -18,7 +18,8 @@ const CCList = () => {
     requirements: '',
     priority: 'medium',
     status: 'active',
-    google_drive_link: ''
+    google_drive_link: '',
+    scheduled_date: ''
   });
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -165,6 +166,7 @@ const CCList = () => {
       formDataToSend.append('priority', formData.priority);
       formDataToSend.append('status', formData.status);
       formDataToSend.append('google_drive_link', formData.google_drive_link);
+      formDataToSend.append('scheduled_date', formData.scheduled_date);
       
       if (selectedFiles.length) {
         selectedFiles.forEach(file => formDataToSend.append('media', file));
@@ -460,6 +462,16 @@ const CCList = () => {
                     </select>
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Scheduled Date</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.scheduled_date}
+                      onChange={(e) => setFormData({...formData, scheduled_date: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+
                   <div className="lg:col-span-2">
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Requirements & Notes</label>
                     <textarea
@@ -718,6 +730,23 @@ const CCList = () => {
                   </div>
                 )}
 
+                {/* Scheduled Date */}
+                {item.scheduled_date && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 bg-blue-50 rounded-lg p-2">
+                      <Calendar className="w-4 h-4" />
+                      <span className="font-medium">Scheduled:</span>
+                      <span>{new Date(item.scheduled_date).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Footer with Actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                   <span className="text-xs text-slate-500">
@@ -827,6 +856,23 @@ const CCList = () => {
                     >
                       {selectedItem.google_drive_link}
                     </a>
+                  </div>
+                )}
+
+                {/* Scheduled Date */}
+                {selectedItem.scheduled_date && (
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-blue-700 mb-3">📅 Scheduled Date</h4>
+                    <p className="text-blue-800 font-medium">
+                      {new Date(selectedItem.scheduled_date).toLocaleDateString('en-US', { 
+                        weekday: 'long',
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
                   </div>
                 )}
 

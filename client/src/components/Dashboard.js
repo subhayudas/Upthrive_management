@@ -10,6 +10,7 @@ import {
   Star,
   FileText,
   MessageSquare,
+  Calendar,
   Plus,
   Eye
 } from 'lucide-react';
@@ -229,6 +230,14 @@ const Dashboard = () => {
               >
                 <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
                 Content Calendar
+              </button>
+              
+              <button
+                onClick={() => window.location.href = '/calendar'}
+                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg flex items-center gap-2 sm:gap-3 transition-all duration-200 text-sm sm:text-base"
+              >
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                Calendar View
               </button>
             </div>
           </div>
