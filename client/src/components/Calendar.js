@@ -13,7 +13,14 @@ import {
   Users,
   Filter,
   Plus,
-  Eye
+  Eye,
+  X,
+  CalendarDays,
+  User,
+  Tag,
+  CheckCircle,
+  AlertCircle,
+  Pause
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -31,6 +38,9 @@ const Calendar = () => {
   const [view, setView] = useState('month');
   const [date, setDate] = useState(new Date());
   const [showAllClients, setShowAllClients] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [dateEvents, setDateEvents] = useState([]);
 
   useEffect(() => {
     if (user?.role === 'manager' || user?.role === 'editor') {
@@ -69,6 +79,61 @@ const Calendar = () => {
     }
   };
 
+  // Helper function to process events and handle multiple events per day
+  const processEvents = (ccList, clientName, clientId) => {
+    const eventsWithDates = ccList.filter(item => item.scheduled_date);
+    
+    // Group events by date
+    const eventsByDate = {};
+    eventsWithDates.forEach(item => {
+      const dateKey = moment(item.scheduled_date).format('YYYY-MM-DD');
+      if (!eventsByDate[dateKey]) {
+        eventsByDate[dateKey] = [];
+      }
+      eventsByDate[dateKey].push(item);
+    });
+    
+    // Process each date group
+    const processedEvents = [];
+    Object.keys(eventsByDate).forEach(dateKey => {
+      const dayEvents = eventsByDate[dateKey];
+      
+      if (dayEvents.length > 1) {
+        console.log(`📅 Found ${dayEvents.length} events on ${dateKey}:`, dayEvents.map(e => e.title));
+      }
+      
+      dayEvents.forEach((item, index) => {
+        const startDate = new Date(item.scheduled_date);
+        
+        // For multiple events on same day, distribute them throughout the day
+        if (dayEvents.length > 1) {
+          // Distribute events across the day (9 AM to 6 PM)
+          const startHour = 9; // 9 AM
+          const endHour = 18; // 6 PM
+          const totalHours = endHour - startHour;
+          const hourInterval = totalHours / dayEvents.length;
+          const eventHour = startHour + (index * hourInterval);
+          
+          startDate.setHours(Math.floor(eventHour), (eventHour % 1) * 60, 0, 0);
+        }
+        
+        processedEvents.push({
+          id: item.id,
+          title: item.title,
+          start: startDate,
+          end: new Date(moment(startDate).add(1, 'hour')),
+          resource: {
+            ...item,
+            clientName: clientName,
+            clientId: clientId
+          }
+        });
+      });
+    });
+    
+    return processedEvents;
+  };
+
   const fetchCalendarData = async () => {
     try {
       setLoading(true);
@@ -82,26 +147,14 @@ const Calendar = () => {
             const response = await axios.get(`/api/cc-list/${client.client_id}`);
             const ccList = response.data.ccList || [];
             
-            const clientEvents = ccList
-              .filter(item => item.scheduled_date)
-              .map(item => ({
-                id: item.id,
-                title: item.title,
-                start: new Date(item.scheduled_date),
-                end: new Date(moment(item.scheduled_date).add(1, 'hour')),
-                resource: {
-                  ...item,
-                  clientName: client.name,
-                  clientId: client.client_id
-                }
-              }));
-            
+            const clientEvents = processEvents(ccList, client.name, client.client_id);
             allEvents.push(...clientEvents);
           } catch (error) {
             console.error(`Error fetching CC list for client ${client.name}:`, error);
           }
         }
         
+        console.log(`📅 Processed ${allEvents.length} events across all clients`);
         setEvents(allEvents);
       } else {
         // Fetch for specific client
@@ -117,20 +170,10 @@ const Calendar = () => {
         const response = await axios.get(`/api/cc-list/${clientId}`);
         const ccList = response.data.ccList || [];
         
-        const calendarEvents = ccList
-          .filter(item => item.scheduled_date)
-          .map(item => ({
-            id: item.id,
-            title: item.title,
-            start: new Date(item.scheduled_date),
-            end: new Date(moment(item.scheduled_date).add(1, 'hour')),
-            resource: {
-              ...item,
-              clientName: user.role === 'client' ? user.name : clients.find(c => c.client_id === clientId)?.name,
-              clientId: clientId
-            }
-          }));
+        const clientName = user.role === 'client' ? user.name : clients.find(c => c.client_id === clientId)?.name;
+        const calendarEvents = processEvents(ccList, clientName, clientId);
         
+        console.log(`📅 Processed ${calendarEvents.length} events for client: ${clientName}`);
         setEvents(calendarEvents);
       }
     } catch (error) {
@@ -158,9 +201,9 @@ const Calendar = () => {
     // Status-based opacity
     let opacity = 1;
     if (status === 'completed') {
-      opacity = 0.6;
+      opacity = 0.7;
     } else if (status === 'inactive') {
-      opacity = 0.4;
+      opacity = 0.5;
     }
     
     return {
@@ -168,10 +211,13 @@ const Calendar = () => {
         backgroundColor,
         opacity,
         border: 'none',
-        borderRadius: '6px',
+        borderRadius: '8px',
         color: 'white',
         fontSize: '12px',
-        fontWeight: '500'
+        fontWeight: '600',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        minHeight: '60px',
+        padding: '4px'
       }
     };
   };
@@ -199,20 +245,33 @@ const Calendar = () => {
     const ContentIcon = getContentTypeIcon(event.resource.content_type);
     const PriorityIcon = getPriorityIcon(event.resource.priority);
     
+    // Count how many events are on the same day
+    const sameDayEvents = events.filter(e => 
+      moment(e.start).format('YYYY-MM-DD') === moment(event.start).format('YYYY-MM-DD')
+    );
+    
     return (
-      <div className="p-1">
+      <div className="p-2 cursor-pointer hover:bg-white hover:bg-opacity-10 rounded transition-colors">
         <div className="flex items-center gap-1 mb-1">
-          <ContentIcon className="h-3 w-3" />
-          <PriorityIcon className="h-3 w-3" />
+          <ContentIcon className="h-3 w-3 flex-shrink-0" />
+          <PriorityIcon className="h-3 w-3 flex-shrink-0" />
+          {sameDayEvents.length > 1 && (
+            <span className="text-xs bg-white bg-opacity-30 px-1 rounded text-white font-medium">
+              {sameDayEvents.indexOf(event) + 1}/{sameDayEvents.length}
+            </span>
+          )}
         </div>
-        <div className="text-xs font-medium truncate">
+        <div className="text-xs font-semibold truncate leading-tight">
           {event.title}
         </div>
         {showAllClients && (
-          <div className="text-xs opacity-75 truncate">
+          <div className="text-xs opacity-90 truncate leading-tight">
             {event.resource.clientName}
           </div>
         )}
+        <div className="text-xs opacity-90 leading-tight">
+          {moment(event.start).format('h:mm A')}
+        </div>
       </div>
     );
   };
@@ -224,8 +283,188 @@ const Calendar = () => {
   };
 
   const handleSelectSlot = (slotInfo) => {
-    // You can implement creating new events on date selection
-    console.log('Selected slot:', slotInfo);
+    const clickedDate = moment(slotInfo.start).format('YYYY-MM-DD');
+    const eventsForDate = events.filter(event => 
+      moment(event.start).format('YYYY-MM-DD') === clickedDate
+    );
+    
+    setSelectedDate(slotInfo.start);
+    setDateEvents(eventsForDate);
+    setShowDateModal(true);
+  };
+
+  // Date Events Modal Component
+  const DateEventsModal = () => {
+    if (!showDateModal || !selectedDate) return null;
+
+    const getStatusIcon = (status) => {
+      switch (status) {
+        case 'completed':
+          return <CheckCircle className="h-4 w-4 text-green-500" />;
+        case 'inactive':
+          return <Pause className="h-4 w-4 text-gray-500" />;
+        default:
+          return <AlertCircle className="h-4 w-4 text-blue-500" />;
+      }
+    };
+
+    const getPriorityColor = (priority) => {
+      switch (priority) {
+        case 'high':
+          return 'text-red-600 bg-red-50 border-red-200';
+        case 'medium':
+          return 'text-orange-600 bg-orange-50 border-orange-200';
+        case 'low':
+          return 'text-green-600 bg-green-50 border-green-200';
+        default:
+          return 'text-blue-600 bg-blue-50 border-blue-200';
+      }
+    };
+
+    const getContentTypeIcon = (contentType) => {
+      switch (contentType) {
+        case 'post':
+          return <FileText className="h-4 w-4" />;
+        case 'reel':
+          return <Zap className="h-4 w-4" />;
+        case 'story':
+          return <Clock className="h-4 w-4" />;
+        case 'carousel':
+          return <Star className="h-4 w-4" />;
+        default:
+          return <FileText className="h-4 w-4" />;
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+          {/* Modal Header */}
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-black p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CalendarDays className="h-6 w-6" />
+                <div>
+                  <h2 className="text-xl font-bold">
+                    {moment(selectedDate).format('MMMM DD, YYYY')}
+                  </h2>
+                  <p className="text-black text-sm">
+                    {dateEvents.length} {dateEvents.length === 1 ? 'event' : 'events'} scheduled
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDateModal(false)}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Content */}
+          <div className="p-6 max-h-[60vh] overflow-y-auto">
+            {dateEvents.length === 0 ? (
+              <div className="text-center py-12">
+                <CalendarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                  No events scheduled
+                </h3>
+                <p className="text-gray-500">
+                  No content is scheduled for this date.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {dateEvents.map((event, index) => (
+                  <div
+                    key={event.id}
+                    className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        {getContentTypeIcon(event.resource.content_type)}
+                        <div>
+                          <h3 className="font-semibold text-gray-900 text-lg">
+                            {event.title}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-sm text-gray-600">
+                              {moment(event.start).format('h:mm A')}
+                            </span>
+                            {showAllClients && (
+                              <>
+                                <span className="text-gray-400">•</span>
+                                <div className="flex items-center gap-1">
+                                  <User className="h-3 w-3 text-gray-500" />
+                                  <span className="text-sm text-gray-600">
+                                    {event.resource.clientName}
+                                  </span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(event.resource.status)}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(event.resource.priority)}`}
+                        >
+                          {event.resource.priority} priority
+                        </span>
+                      </div>
+                    </div>
+
+                    {event.resource.description && (
+                      <p className="text-gray-700 text-sm mb-3">
+                        {event.resource.description}
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
+                      <div className="flex items-center gap-1 text-xs text-gray-600">
+                        <Tag className="h-3 w-3" />
+                        <span className="capitalize">{event.resource.content_type}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-gray-600">
+                        <span className="capitalize">Status: {event.resource.status}</span>
+                      </div>
+                      {event.resource.platform && (
+                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                          <span>Platform: {event.resource.platform}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Modal Footer */}
+          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => setShowDateModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowDateModal(false);
+                  window.location.href = '/cc-list';
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Manage Content
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -244,6 +483,7 @@ const Calendar = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <DateEventsModal />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
         <div className="mb-6 md:mb-8">
@@ -349,84 +589,72 @@ const Calendar = () => {
               selectable
               eventPropGetter={getEventStyle}
               components={{
-                event: EventComponent
+                event: EventComponent,
+                showMore: ({ events, date }) => (
+                  <div className="text-xs text-center p-2 bg-indigo-100 text-indigo-700 rounded-lg cursor-pointer hover:bg-indigo-200 transition-colors font-medium">
+                    +{events.length} more events
+                  </div>
+                )
               }}
               views={['month', 'week', 'day']}
-              step={60}
-              timeslots={1}
+              step={30}
+              timeslots={2}
               showMultiDayTimes
               popup
               popupOffset={{ x: 10, y: 10 }}
+              doShowMoreDrillDown={true}
+              max={view === 'month' ? 2 : undefined}
               style={{
                 height: '100%',
                 fontFamily: 'inherit'
+              }}
+              messages={{
+                today: 'Today',
+                previous: 'Previous',
+                next: 'Next',
+                month: 'Month',
+                week: 'Week',
+                day: 'Day',
+                agenda: 'Agenda',
+                date: 'Date',
+                time: 'Time',
+                event: 'Event',
+                noEventsInRange: 'No events in this range',
+                showMore: total => `+${total} more`
               }}
             />
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="mt-6 bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200/60 p-4 md:p-6">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">Legend</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Priority Colors */}
-            <div>
-              <h4 className="text-sm font-semibold text-slate-700 mb-2">Priority</h4>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 rounded"></div>
-                  <span className="text-sm text-slate-600">High Priority</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                  <span className="text-sm text-slate-600">Medium Priority</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded"></div>
-                  <span className="text-sm text-slate-600">Low Priority</span>
-                </div>
+        {/* Events Summary */}
+        {events.length > 0 && (
+          <div className="mt-6 bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200/60 p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">Events Summary</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-blue-50 rounded-lg p-3">
+                <div className="text-2xl font-bold text-blue-600">{events.length}</div>
+                <div className="text-sm text-blue-800">Total Events</div>
               </div>
-            </div>
-
-            {/* Content Types */}
-            <div>
-              <h4 className="text-sm font-semibold text-slate-700 mb-2">Content Types</h4>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-slate-600" />
-                  <span className="text-sm text-slate-600">Post</span>
+              <div className="bg-green-50 rounded-lg p-3">
+                <div className="text-2xl font-bold text-green-600">
+                  {new Set(events.map(e => moment(e.start).format('YYYY-MM-DD'))).size}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-slate-600" />
-                  <span className="text-sm text-slate-600">Reel</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-slate-600" />
-                  <span className="text-sm text-slate-600">Story</span>
-                </div>
+                <div className="text-sm text-green-800">Days with Events</div>
               </div>
-            </div>
-
-            {/* Status */}
-            <div>
-              <h4 className="text-sm font-semibold text-slate-700 mb-2">Status</h4>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded opacity-100"></div>
-                  <span className="text-sm text-slate-600">Active</span>
+              <div className="bg-orange-50 rounded-lg p-3">
+                <div className="text-2xl font-bold text-orange-600">
+                  {Object.values(events.reduce((acc, event) => {
+                    const date = moment(event.start).format('YYYY-MM-DD');
+                    acc[date] = (acc[date] || 0) + 1;
+                    return acc;
+                  }, {})).filter(count => count > 1).length}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded opacity-60"></div>
-                  <span className="text-sm text-slate-600">Completed</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded opacity-40"></div>
-                  <span className="text-sm text-slate-600">Inactive</span>
-                </div>
+                <div className="text-sm text-orange-800">Days with Multiple Events</div>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
 
         {/* Empty State */}
         {events.length === 0 && (
