@@ -32,6 +32,8 @@ const allowedOrigins = [
   'https://upthrive-management.vercel.app/',
   'https://upthrive-management-two.vercel.app',
   'https://upthrive-management-two.vercel.app/',
+  'https://www.upthrivemanagement.online',
+  'https://www.upthrivemanagement.online/',
   'http://localhost:3000'
 ];
 
