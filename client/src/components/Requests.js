@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import AssignRequestModal from './AssignRequestModal';
 import ManagerReviewModal from './ManagerReviewModal';
 import ClientReviewModal from './ClientReviewModal';
+import { renderTextWithLinks } from '../utils/textUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -503,13 +504,13 @@ const Requests = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               {/* Modal Header */}
-              <div className="flex justify-between items-center p-6 border-b border-gray-200">
-                <div className="flex items-center gap-3">
+              <div className="flex justify-between items-center p-6 border-b border-black ">
+                <div className="flex items-center gap-3 ">
                   <div className={`w-12 h-12 bg-gradient-to-r ${getContentTypeStyles(selectedRequestForDetails.content_type).gradient} rounded-xl flex items-center justify-center shadow-lg`}>
                     {React.createElement(getContentTypeStyles(selectedRequestForDetails.content_type).icon, { className: "h-6 w-6 text-white" })}
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-800">Request Details</h2>
+                    <h2 className="text-2xl font-bold text-slate-800 ">Request Details</h2>
                     <span className={`text-sm font-bold uppercase tracking-wider ${getContentTypeStyles(selectedRequestForDetails.content_type).text}`}>
                       {selectedRequestForDetails.content_type}
                     </span>
@@ -547,14 +548,14 @@ const Requests = () => {
                 {/* Request Message */}
                 <div className="bg-gray-50 rounded-xl p-4">
                   <h4 className="text-sm font-semibold text-gray-700 mb-3">Request Message</h4>
-                  <p className="text-gray-800 leading-relaxed">{selectedRequestForDetails.message}</p>
+                  <p className="text-gray-800 leading-relaxed">{renderTextWithLinks(selectedRequestForDetails.message)}</p>
                 </div>
 
                 {/* Requirements */}
                 {selectedRequestForDetails.requirements && (
                   <div className="bg-blue-50 rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-blue-700 mb-3">Requirements</h4>
-                    <p className="text-blue-800 leading-relaxed">{selectedRequestForDetails.requirements}</p>
+                    <p className="text-blue-800 leading-relaxed">{renderTextWithLinks(selectedRequestForDetails.requirements)}</p>
                   </div>
                 )}
 
@@ -637,21 +638,21 @@ const Requests = () => {
                 {selectedRequestForDetails.editor_message && (
                   <div className="bg-indigo-50 rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-indigo-700 mb-3">Editor's Message</h4>
-                    <p className="text-indigo-800 leading-relaxed">{selectedRequestForDetails.editor_message}</p>
+                    <p className="text-indigo-800 leading-relaxed">{renderTextWithLinks(selectedRequestForDetails.editor_message)}</p>
                   </div>
                 )}
 
                 {selectedRequestForDetails.manager_feedback && (
                   <div className="bg-orange-50 rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-orange-700 mb-3">Manager Feedback</h4>
-                    <p className="text-orange-800 leading-relaxed">{selectedRequestForDetails.manager_feedback}</p>
+                    <p className="text-orange-800 leading-relaxed">{renderTextWithLinks(selectedRequestForDetails.manager_feedback)}</p>
                   </div>
                 )}
 
                 {selectedRequestForDetails.client_feedback && (
                   <div className="bg-pink-50 rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-pink-700 mb-3">Client Feedback</h4>
-                    <p className="text-pink-800 leading-relaxed">{selectedRequestForDetails.client_feedback}</p>
+                    <p className="text-pink-800 leading-relaxed">{renderTextWithLinks(selectedRequestForDetails.client_feedback)}</p>
                   </div>
                 )}
 

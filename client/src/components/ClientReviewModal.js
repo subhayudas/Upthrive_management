@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Check, XCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { renderTextWithLinks } from '../utils/textUtils';
 import WhatsAppButton from './WhatsAppButton';
 import { createWhatsAppMessage } from '../utils/whatsappUtils';
 
@@ -73,11 +74,11 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
           {/* Original Request */}
           <div className="bg-gray-50 rounded-lg p-3">
             <h3 className="font-medium text-gray-900 mb-2 text-sm">Your Original Request:</h3>
-            <p className="text-gray-700 text-sm leading-relaxed">{request?.message}</p>
+            <p className="text-gray-700 text-sm leading-relaxed">{renderTextWithLinks(request?.message)}</p>
             <div className="mt-2 text-xs text-gray-600">
               <div className="flex flex-col gap-1">
                 <span><strong>Content Type:</strong> {request?.content_type}</span>
-                <span><strong>Requirements:</strong> {request?.requirements || 'None specified'}</span>
+                <span><strong>Requirements:</strong> {request?.requirements ? renderTextWithLinks(request.requirements) : 'None specified'}</span>
               </div>
             </div>
           </div>
@@ -86,7 +87,7 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
           {request?.editor_message && (
             <div className="bg-blue-50 rounded-lg p-3">
               <h3 className="font-medium text-gray-900 mb-2 text-sm">Editor's Work Summary:</h3>
-              <p className="text-gray-700 text-sm leading-relaxed">{request.editor_message}</p>
+              <p className="text-gray-700 text-sm leading-relaxed">{renderTextWithLinks(request.editor_message)}</p>
             </div>
           )}
 

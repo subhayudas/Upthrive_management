@@ -3,6 +3,7 @@ import { X, Check, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import WhatsAppButton from './WhatsAppButton';
 import { createWhatsAppMessage } from '../utils/whatsappUtils';
+import { renderTextWithLinks } from '../utils/textUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -118,12 +119,12 @@ const ManagerReviewModal = ({ request: initialRequest, isOpen, onClose, onReview
         <div className="mb-6 space-y-4">
           <div>
             <h3 className="font-medium text-gray-900 mb-2">Original Request:</h3>
-            <p className="text-gray-700 bg-gray-50 p-3 rounded">{request?.message}</p>
+            <p className="text-gray-700 bg-gray-50 p-3 rounded">{renderTextWithLinks(request?.message)}</p>
           </div>
 
           <div>
             <h3 className="font-medium text-gray-900 mb-2">Editor's Response:</h3>
-            <p className="text-gray-700 bg-blue-50 p-3 rounded">{request?.editor_message}</p>
+            <p className="text-gray-700 bg-blue-50 p-3 rounded">{renderTextWithLinks(request?.editor_message)}</p>
           </div>
 
           {request?.completed_work_url && (

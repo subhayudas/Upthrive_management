@@ -4,6 +4,7 @@ import { Send, Clock, AlertCircle, CheckCircle, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import WhatsAppButton from './WhatsAppButton';
 import { createWhatsAppMessage } from '../utils/whatsappUtils';
+import { renderTextWithLinks } from '../utils/textUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -181,11 +182,11 @@ const Tasks = () => {
 
               <div className="mb-4">
                 <h4 className="font-medium text-gray-900 mb-2">Request Details:</h4>
-                <p className="text-gray-700 bg-gray-50 p-3 rounded">{task.message}</p>
+                <p className="text-gray-700 bg-gray-50 p-3 rounded">{renderTextWithLinks(task.message)}</p>
                 {task.requirements && (
                   <div className="mt-2">
                     <strong className="text-gray-700">Requirements:</strong>
-                    <p className="text-gray-600">{task.requirements}</p>
+                    <p className="text-gray-600">{renderTextWithLinks(task.requirements)}</p>
                   </div>
                 )}
                 
@@ -219,7 +220,7 @@ const Tasks = () => {
               {task.status === 'manager_rejected' && task.manager_feedback && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
                   <h4 className="font-medium text-red-800 mb-1">Manager Feedback:</h4>
-                  <p className="text-red-700">{task.manager_feedback}</p>
+                  <p className="text-red-700">{renderTextWithLinks(task.manager_feedback)}</p>
                 </div>
               )}
 
@@ -227,7 +228,7 @@ const Tasks = () => {
               {task.status === 'client_rejected' && task.client_feedback && (
                 <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded">
                   <h4 className="font-medium text-orange-800 mb-1">Client Feedback:</h4>
-                  <p className="text-orange-700">{task.client_feedback}</p>
+                  <p className="text-orange-700">{renderTextWithLinks(task.client_feedback)}</p>
                   <p className="text-sm text-orange-600 mt-1">
                     Please address the client's concerns and resubmit your work.
                   </p>
