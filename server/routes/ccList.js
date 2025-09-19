@@ -223,7 +223,7 @@ router.post('/:clientId', authenticateUser, upload.array('media', 10), async (re
 });
 
 // Update CC list item (supports multiple media)
-router.put('/:clientId/:itemId', authenticateUser, requireRole(['manager']), upload.array('media', 10), async (req, res) => {
+router.put('/:clientId/:itemId', authenticateUser, upload.array('media', 10), async (req, res) => {
   try {
     const { clientId, itemId } = req.params;
     const { title, description, content_type, requirements, priority, status, google_drive_link, scheduled_date } = req.body;
@@ -233,6 +233,31 @@ router.put('/:clientId/:itemId', authenticateUser, requireRole(['manager']), upl
     console.log('=== CC LIST UPDATE FILE UPLOAD DEBUG ===');
     console.log('Request body:', req.body);
     console.log('Request files:', req.files?.map(f => f.originalname));
+
+    // Access control: For clients, verify they're updating their own items
+    if (req.user.role === 'client') {
+      // Get the user's client_id from their profile
+      const { data: profile, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('client_id')
+        .eq('id', req.user.id)
+        .single();
+
+      if (profileError || !profile?.client_id) {
+        console.error('Client profile error:', profileError);
+        return res.status(403).json({ error: 'Client profile not found' });
+      }
+
+      // Verify they're updating items from their own client
+      if (profile.client_id !== clientId) {
+        console.error('Client trying to update from wrong client_id');
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    } else if (req.user.role === 'manager' || req.user.role === 'editor') {
+      // Managers and editors can update any client's items
+    } else {
+      return res.status(403).json({ error: 'Access denied' });
+    }
 
     // Upload files to Supabase Storage if provided
     if (req.files && req.files.length > 0) {
@@ -290,7 +315,7 @@ router.put('/:clientId/:itemId', authenticateUser, requireRole(['manager']), upl
       updateData.scheduled_date = scheduled_date || null;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('cc_list')
       .update(updateData)
       .eq('id', itemId)

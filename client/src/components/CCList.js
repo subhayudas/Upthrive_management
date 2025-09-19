@@ -11,6 +11,8 @@ const CCList = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null); // Add state for selected item
   const [showDetailModal, setShowDetailModal] = useState(false); // Add state for detail modal
+  const [editingItem, setEditingItem] = useState(null); // Add state for editing item
+  const [showEditForm, setShowEditForm] = useState(false); // Add state for edit form
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -242,6 +244,92 @@ const CCList = () => {
   const closeDetailModal = () => {
     setSelectedItem(null);
     setShowDetailModal(false);
+  };
+
+  // Add function to handle edit
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setFormData({
+      title: item.title,
+      description: item.description,
+      content_type: item.content_type,
+      requirements: item.requirements || '',
+      priority: item.priority,
+      status: item.status,
+      google_drive_link: item.google_drive_link || '',
+      scheduled_date: item.scheduled_date ? new Date(item.scheduled_date).toISOString().slice(0, 16) : ''
+    });
+    setSelectedFiles([]); // Clear selected files for edit
+    setShowEditForm(true);
+    setShowDetailModal(false); // Close detail modal if open
+  };
+
+  // Add function to handle update
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setShowEditForm(false);
+    
+    try {
+      let clientId;
+      console.log('Updating CC item...'); // Debug log
+      
+      if (user.role === 'client') {
+        clientId = user.client_id || user.id;
+      } else if (user.role === 'manager' || user.role === 'editor') {
+        clientId = selectedClient;
+      }
+      
+      if (!clientId) {
+        console.error('Client ID not found');
+        toast.error('Client ID not found');
+        return;
+      }
+      
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('content_type', formData.content_type);
+      formDataToSend.append('requirements', formData.requirements);
+      formDataToSend.append('priority', formData.priority);
+      formDataToSend.append('status', formData.status);
+      formDataToSend.append('google_drive_link', formData.google_drive_link);
+      formDataToSend.append('scheduled_date', formData.scheduled_date);
+      
+      if (selectedFiles.length) {
+        selectedFiles.forEach(file => formDataToSend.append('media', file));
+      }
+
+      await axios.put(`/api/cc-list/${clientId}/${editingItem.id}`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      toast.success('CC item updated successfully!');
+      setSelectedFiles([]);
+      setEditingItem(null);
+      fetchCCList();
+    } catch (error) {
+      console.error('Error updating CC item:', error);
+      toast.error('Failed to update CC item');
+    }
+  };
+
+  // Add function to cancel edit
+  const cancelEdit = () => {
+    setShowEditForm(false);
+    setEditingItem(null);
+    setSelectedFiles([]);
+    setFormData({
+      title: '',
+      description: '',
+      content_type: 'post',
+      requirements: '',
+      priority: 'medium',
+      status: 'active',
+      google_drive_link: '',
+      scheduled_date: ''
+    });
   };
 
   // Add this useEffect for debugging client users
@@ -550,6 +638,173 @@ const CCList = () => {
           </div>
         )}
 
+        {/* Edit Form - No Shadows */}
+        {showEditForm && editingItem && (
+          <div className="mb-8 animate-fadeIn">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                  <Edit className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800">Edit Content</h3>
+              </div>
+              
+              <form onSubmit={handleUpdate} className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Content Title</label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                      placeholder="Enter your content title..."
+                      required
+                    />
+                  </div>
+                  
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                      rows="3"
+                      placeholder="Describe your content idea..."
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Content Type</label>
+                    <select
+                      value={formData.content_type}
+                      onChange={(e) => setFormData({...formData, content_type: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                    >
+                      <option value="post">📝 Social Post</option>
+                      <option value="reel">⚡ Reel/Video</option>
+                      <option value="story">⏰ Story</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Priority Level</label>
+                    <select
+                      value={formData.priority}
+                      onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                    >
+                      <option value="low">🟢 Low Priority</option>
+                      <option value="medium">🟡 Medium Priority</option>
+                      <option value="high">🔴 High Priority</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                    >
+                      <option value="active">✅ Active</option>
+                      <option value="inactive">⏸️ Inactive</option>
+                      <option value="completed">🎉 Completed</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Scheduled Date</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.scheduled_date}
+                      onChange={(e) => setFormData({...formData, scheduled_date: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Requirements & Notes</label>
+                    <textarea
+                      value={formData.requirements}
+                      onChange={(e) => setFormData({...formData, requirements: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                      rows="2"
+                      placeholder="Any specific requirements or additional notes..."
+                    />
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Google Drive Link (Optional)</label>
+                    <input
+                      type="url"
+                      value={formData.google_drive_link}
+                      onChange={(e) => setFormData({...formData, google_drive_link: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                      placeholder="https://drive.google.com/..."
+                    />
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Upload New Media (Optional)</label>
+                    <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-slate-400 transition-colors">
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        accept="image/*,video/*"
+                        multiple
+                        className="hidden"
+                        id="edit-media-upload"
+                      />
+                      <label htmlFor="edit-media-upload" className="cursor-pointer">
+                        <div className="flex flex-col items-center">
+                          <Upload className="h-8 w-8 text-slate-400 mb-2" />
+                          <p className="text-slate-600 font-medium">
+                            {selectedFiles.length ? `${selectedFiles.length} file(s) selected` : 'Click to upload new images or videos'}
+                          </p>
+                          <p className="text-slate-500 text-sm mt-1">
+                            Supports: JPG, PNG, GIF, MP4, MOV, AVI, WEBM (Max 100MB)
+                          </p>
+                          <p className="text-slate-400 text-xs mt-2">
+                            Note: New files will replace existing media
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                    {selectedFiles.length > 0 && (
+                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-left">
+                        <p className="text-green-700 text-sm font-semibold">Selected files:</p>
+                        <ul className="text-green-700 text-sm list-disc pl-5">
+                          {selectedFiles.map((f, i) => (
+                            <li key={i}>✓ {f.name} ({(f.size / (1024 * 1024)).toFixed(2)}MB)</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <button 
+                    type="submit" 
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transform hover:scale-105 transition-all duration-200"
+                  >
+                    Update Content Item
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* Client Selection - No Shadows */}
         {(isManager || isEditor) && (
           <div className="mb-8">
@@ -765,6 +1020,19 @@ const CCList = () => {
                       <Eye className="h-4 w-4" />
                     </button>
                     
+                    {(isManager || isEditor || user.role === 'client') && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent card click
+                          handleEdit(item);
+                        }}
+                        className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                        title="Edit Item"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                    )}
+                    
                     {(isManager || user.role === 'client') && (
                       <button
                         onClick={(e) => {
@@ -961,6 +1229,16 @@ const CCList = () => {
 
                 {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
+                  {(isManager || isEditor || user.role === 'client') && (
+                    <button
+                      onClick={() => {
+                        handleEdit(selectedItem);
+                      }}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105"
+                    >
+                      Edit Item
+                    </button>
+                  )}
                   {(isManager || user.role === 'client') && (
                     <button
                       onClick={() => {
