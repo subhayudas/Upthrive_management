@@ -128,8 +128,8 @@ router.post('/:clientId', authenticateUser, upload.array('media', 10), async (re
         console.error('Client trying to create for wrong client_id:', profile.client_id, 'vs', clientId);
         return res.status(403).json({ error: 'Access denied' });
       }
-    } else if (req.user.role === 'manager') {
-      // Managers can create for any client
+    } else if (req.user.role === 'manager' || req.user.role === 'editor') {
+      // Managers and editors can create for any client
     } else {
       return res.status(403).json({ error: 'Access denied' });
     }
