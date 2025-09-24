@@ -48,13 +48,19 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    console.log('🌐 CORS Request from origin:', origin);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🌐 CORS Request from origin:', origin);
+    }
     
     if (allowedOrigins.includes(origin)) {
-      console.log('✅ Origin allowed:', origin);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Origin allowed:', origin);
+      }
       return callback(null, true);
     } else {
-      console.log('❌ Origin blocked:', origin);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('❌ Origin blocked:', origin);
+      }
       return callback(new Error('Not allowed by CORS'));
     }
   },
@@ -67,7 +73,10 @@ app.use(cors({
 // Handle preflight requests explicitly
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
-  console.log('🔄 Preflight request from:', origin);
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔄 Preflight request from:', origin);
+  }
   
   if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
@@ -75,24 +84,31 @@ app.options('*', (req, res) => {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Max-Age', '86400'); // 24 hours
-    console.log('✅ Preflight allowed for:', origin);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Preflight allowed for:', origin);
+    }
     res.sendStatus(200);
   } else {
-    console.log('❌ Preflight blocked for:', origin);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('❌ Preflight blocked for:', origin);
+    }
     res.status(403).json({ error: 'CORS preflight blocked' });
   }
 });
 
-// CORS debugging middleware
-app.use((req, res, next) => {
-  console.log('📡 Request Info:');
-  console.log('Method:', req.method);
-  console.log('URL:', req.url);
-  console.log('Origin:', req.headers.origin);
-  console.log('User-Agent:', req.headers['user-agent']);
-  console.log('---');
-  next();
-});
+// CORS debugging middleware (only in development)
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    console.log('📡 Request Info:');
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    console.log('Origin:', req.headers.origin);
+    console.log('User-Agent:', req.headers['user-agent']);
+    console.log('---');
+    next();
+  });
+}
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -132,8 +148,50 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+});
+
+// Graceful shutdown handling
+const gracefulShutdown = (signal) => {
+  console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
+  
+  if (server && server.listening) {
+    server.close((err) => {
+      if (err) {
+        console.error('❌ Error during server shutdown:', err);
+        process.exit(1);
+      }
+      
+      console.log('✅ Server closed gracefully');
+      process.exit(0);
+    });
+    
+    // Force close server after 10 seconds
+    setTimeout(() => {
+      console.log('⚠️ Forcing server shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  } else {
+    console.log('🛑 Server not running, exiting immediately');
+    process.exit(0);
+  }
+};
+
+// Handle termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err);
+  gracefulShutdown('uncaughtException');
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  gracefulShutdown('unhandledRejection');
 });

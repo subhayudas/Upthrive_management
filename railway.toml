@@ -1,10 +1,14 @@
 [build]
-buildCommand = "cd server && npm install"
+buildCommand = "cd server && npm ci --only=production --ignore-scripts"
 
 [deploy]
 startCommand = "cd server && npm start"
 restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 10
+restartPolicyMaxRetries = 3
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+watchPatterns = ["server/**"]
 
 [env]
+NODE_ENV = "production"
 PORT = "5000"
