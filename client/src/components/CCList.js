@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
 import { Plus, Edit, Trash2, FileText, Calendar, Clock, Star, Zap, Target, X, Eye, Upload } from 'lucide-react'; // Add X, Eye, and Upload icons
 import toast from 'react-hot-toast';
+import apiService from '../services/apiService';
 
 const CCList = () => {
   const { user, isManager, isEditor } = useAuth();
@@ -43,33 +43,41 @@ const CCList = () => {
       console.log('Fetching clients...'); // Debug log
       
       // Use the dedicated clients endpoint instead of general users endpoint
-      const response = await axios.get('/api/users/clients');
-      console.log('Clients response:', response.data); // Debug log
+      const result = await apiService.getClients();
+      console.log('Clients response:', result); // Debug log
       
-      const clientData = response.data.clients;
-      console.log('Client data:', clientData); // Debug log
+      if (result.success) {
+        const clientData = result.data.clients;
+        console.log('Client data:', clientData); // Debug log
       
-      // Map the client data properly
-      const mappedClients = clientData.map(client => ({
-        client_id: client.client_id || client.id, // Use client_id if available, otherwise use id
-        name: client.name,
-        email: client.email,
-        id: client.id
-      }));
-      
-      console.log('Mapped clients:', mappedClients); // Debug log
-      setClients(mappedClients);
-      
-      if (mappedClients.length > 0) {
-        setSelectedClient(mappedClients[0].client_id);
-        console.log('Selected first client:', mappedClients[0].client_id); // Debug log
+        // Map the client data properly
+        const mappedClients = clientData.map(client => ({
+          client_id: client.client_id || client.id, // Use client_id if available, otherwise use id
+          name: client.name,
+          email: client.email,
+          id: client.id
+        }));
+        
+        console.log('Mapped clients:', mappedClients); // Debug log
+        setClients(mappedClients);
+        
+        if (mappedClients.length > 0) {
+          setSelectedClient(mappedClients[0].client_id);
+          console.log('Selected first client:', mappedClients[0].client_id); // Debug log
+        } else {
+          console.log('No clients found'); // Debug log
+          toast.info('No clients available in the system');
+        }
+        
+        if (result.source === 'supabase') {
+          console.log('✅ Clients loaded using Supabase fallback');
+        }
       } else {
-        console.log('No clients found'); // Debug log
-        toast.info('No clients available in the system');
+        console.error('Error fetching clients:', result.error);
+        toast.error('Failed to load clients');
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
-      console.error('Error response:', error.response?.data);
       toast.error('Failed to load clients');
     }
   };
@@ -93,11 +101,21 @@ const CCList = () => {
         return;
       }
       
-      const response = await axios.get(`/api/cc-list/${clientId}`);
-      console.log('CC List response:', response.data);
-      console.log('First item media_urls:', response.data.ccList[0]?.media_urls);
-      console.log('First item image_url:', response.data.ccList[0]?.image_url);
-      setCcList(response.data.ccList);
+      const result = await apiService.getCCList(clientId);
+      
+      if (result.success) {
+        console.log('CC List response:', result.data);
+        console.log('First item media_urls:', result.data.ccList[0]?.media_urls);
+        console.log('First item image_url:', result.data.ccList[0]?.image_url);
+        setCcList(result.data.ccList);
+        
+        if (result.source === 'supabase') {
+          console.log('✅ CC List loaded using Supabase fallback');
+        }
+      } else {
+        console.error('Error fetching CC list:', result.error);
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error fetching CC list:', error);
       console.error('Error response:', error.response?.data);
@@ -174,14 +192,15 @@ const CCList = () => {
         selectedFiles.forEach(file => formDataToSend.append('media', file));
       }
 
-      await axios.post(`/api/cc-list/${clientId}`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      toast.success('CC item created successfully!');
-      setSelectedFiles([]);
-      fetchCCList();
+      const result = await apiService.createCCItem(clientId, formDataToSend);
+      
+      if (result.success) {
+        toast.success(`CC item created successfully! ${result.source === 'supabase' ? '(Using direct connection)' : ''}`);
+        setSelectedFiles([]);
+        fetchCCList();
+      } else {
+        toast.error(result.error || 'Failed to create CC item');
+      }
     } catch (error) {
       console.error('Error creating CC item:', error);
       toast.error('Failed to create CC item');
@@ -215,11 +234,15 @@ const CCList = () => {
       
       console.log('DELETE URL:', `/api/cc-list/${clientId}/${itemId}`); // Debug log
       
-      const response = await axios.delete(`/api/cc-list/${clientId}/${itemId}`);
-      console.log('Delete response:', response.data); // Debug log
+      const result = await apiService.deleteCCItem(clientId, itemId);
+      console.log('Delete response:', result); // Debug log
       
-      toast.success('CC item deleted successfully!');
-      fetchCCList(); // Refresh the list after deletion
+      if (result.success) {
+        toast.success(`CC item deleted successfully! ${result.source === 'supabase' ? '(Using direct connection)' : ''}`);
+        fetchCCList(); // Refresh the list after deletion
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error deleting CC item:', error);
       console.error('Error response:', error.response?.data); // More detailed error logging
@@ -300,15 +323,16 @@ const CCList = () => {
         selectedFiles.forEach(file => formDataToSend.append('media', file));
       }
 
-      await axios.put(`/api/cc-list/${clientId}/${editingItem.id}`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      toast.success('CC item updated successfully!');
-      setSelectedFiles([]);
-      setEditingItem(null);
-      fetchCCList();
+      const result = await apiService.updateCCItem(clientId, editingItem.id, formDataToSend);
+      
+      if (result.success) {
+        toast.success(`CC item updated successfully! ${result.source === 'supabase' ? '(Using direct connection)' : ''}`);
+        setSelectedFiles([]);
+        setEditingItem(null);
+        fetchCCList();
+      } else {
+        toast.error(result.error || 'Failed to update CC item');
+      }
     } catch (error) {
       console.error('Error updating CC item:', error);
       toast.error('Failed to update CC item');

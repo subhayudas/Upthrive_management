@@ -3,8 +3,7 @@ import { X, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import WhatsAppButton from './WhatsAppButton';
 import { createWhatsAppMessage } from '../utils/whatsappUtils';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import apiService from '../services/apiService';
 
 const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
   const [editors, setEditors] = useState([]);
@@ -20,15 +19,16 @@ const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
 
   const fetchEditors = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/requests/editors`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const result = await apiService.getEditors();
+      
+      if (result.success) {
+        setEditors(result.data.editors || []);
+        if (result.source === 'supabase') {
+          console.log('✅ Editors loaded using Supabase fallback');
         }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setEditors(data.editors || []);
+      } else {
+        console.error('Error fetching editors:', result.error);
+        toast.error('Failed to load editors');
       }
     } catch (error) {
       console.error('Error fetching editors:', error);
@@ -46,29 +46,20 @@ const AssignRequestModal = ({ request, isOpen, onClose, onAssign }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/requests/${request.id}/assign`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ editor_id: selectedEditor })
-      });
+      const result = await apiService.assignRequest(request.id, selectedEditor);
 
-      if (response.ok) {
-        const data = await response.json();
-        toast.success('Request assigned successfully!');
-        onAssign(data.request);
+      if (result.success) {
+        toast.success(`Request assigned successfully! ${result.source === 'supabase' ? '(Using direct connection)' : ''}`);
+        onAssign(result.data.request);
         onClose();
         setSelectedEditor('');
         setSelectedEditorData(null);
       } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to assign request');
+        toast.error(result.error || 'Failed to assign request');
       }
     } catch (error) {
       console.error('Assignment error:', error);
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to assign request');
     } finally {
       setLoading(false);
     }

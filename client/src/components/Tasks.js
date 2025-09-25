@@ -5,8 +5,7 @@ import toast from 'react-hot-toast';
 import WhatsAppButton from './WhatsAppButton';
 import { createWhatsAppMessage } from '../utils/whatsappUtils';
 import { renderTextWithLinks } from '../utils/textUtils';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import apiService from '../services/apiService';
 
 const Tasks = () => {
   const { user, isEditor, isManager } = useAuth();
@@ -24,20 +23,19 @@ const Tasks = () => {
     try {
       console.log('Fetching tasks for editor:', user.id);
       
-      const response = await fetch(`${API_BASE_URL}/api/requests/my-tasks`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Tasks data received:', data);
-        console.log('First task completed_work_url:', data.requests?.[0]?.completed_work_url);
+      const result = await apiService.getTasks();
+      
+      if (result.success) {
+        console.log('Tasks data received:', result.data);
+        console.log('First task completed_work_url:', result.data.requests?.[0]?.completed_work_url);
         
-        setTasks(data.requests || []);
+        setTasks(result.data.requests || []);
+        if (result.source === 'supabase') {
+          console.log('✅ Tasks loaded using Supabase fallback');
+        }
       } else {
-        throw new Error('Failed to fetch tasks');
+        console.error('Error fetching tasks:', result.error);
+        toast.error('Failed to load tasks');
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -56,6 +54,11 @@ const Tasks = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!submitData.message.trim()) {
+      toast.error('Please provide a message describing your work');
+      return;
+    }
+    
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('message', submitData.message);
@@ -64,28 +67,21 @@ const Tasks = () => {
         formDataToSend.append('completed_work', selectedFile);
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/requests/${selectedTask.id}/submit`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formDataToSend
-      });
+      const result = await apiService.submitTask(selectedTask.id, formDataToSend);
 
-      if (response.ok) {
-        toast.success('Work submitted successfully!');
+      if (result.success) {
+        toast.success(`Work submitted successfully! ${result.source === 'supabase' ? '(Using direct connection)' : ''}`);
         setShowSubmitForm(false);
         setSelectedTask(null);
         setSubmitData({ message: '', completed_work_url: '' });
         setSelectedFile(null);
         fetchTasks();
       } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to submit work');
+        toast.error(result.error || 'Failed to submit work');
       }
     } catch (error) {
       console.error('Submit error:', error);
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to submit work');
     }
   };
 

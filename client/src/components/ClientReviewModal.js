@@ -4,8 +4,7 @@ import toast from 'react-hot-toast';
 import { renderTextWithLinks } from '../utils/textUtils';
 import WhatsAppButton from './WhatsAppButton';
 import { createWhatsAppMessage } from '../utils/whatsappUtils';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import apiService from '../services/apiService';
 
 const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
   const [action, setAction] = useState('');
@@ -22,32 +21,26 @@ const ClientReviewModal = ({ request, isOpen, onClose, onReview }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/requests/${request.id}/client-review`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ 
-          action, 
-          feedback: feedback.trim() || undefined 
-        })
-      });
+      const result = await apiService.clientReviewRequest(
+        request.id, 
+        action, 
+        feedback.trim() || undefined
+      );
 
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(action === 'approve' ? 'Work approved! Request completed.' : 'Work rejected and sent back for revision');
-        onReview(data.request);
+      if (result.success) {
+        const successMessage = action === 'approve' ? 'Work approved! Request completed.' : 'Work rejected and sent back for revision';
+        const sourceMessage = result.source === 'supabase' ? ' (Using direct connection)' : '';
+        toast.success(successMessage + sourceMessage);
+        onReview(result.data.request);
         onClose();
         setAction('');
         setFeedback('');
       } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to review request');
+        toast.error(result.error || 'Failed to review request');
       }
     } catch (error) {
       console.error('Client review error:', error);
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to review request');
     } finally {
       setLoading(false);
     }

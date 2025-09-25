@@ -4,8 +4,7 @@ import toast from 'react-hot-toast';
 import WhatsAppButton from './WhatsAppButton';
 import { createWhatsAppMessage } from '../utils/whatsappUtils';
 import { renderTextWithLinks } from '../utils/textUtils';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import apiService from '../services/apiService';
 
 const ManagerReviewModal = ({ request: initialRequest, isOpen, onClose, onReview }) => {
   const [action, setAction] = useState('');
@@ -22,21 +21,18 @@ const ManagerReviewModal = ({ request: initialRequest, isOpen, onClose, onReview
 
   const fetchEnhancedRequestData = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/requests/debug-phones/${initialRequest.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      // Since this is a debug endpoint that may not have a direct Supabase equivalent,
+      // let's just use the initial request data and enhance it with basic profile data
+      const result = await apiService.getRequests();
+      
+      if (result.success) {
+        // Find the specific request from the list
+        const foundRequest = result.data.requests?.find(r => r.id === initialRequest.id);
+        if (foundRequest) {
+          setRequest(foundRequest);
+        } else {
+          setRequest(initialRequest);
         }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const enhancedRequest = {
-          ...initialRequest,
-          from_user: data.from_user_profile,
-          assigned_editor: data.full_request?.assigned_editor,
-          clients: data.full_request?.clients
-        };
-        setRequest(enhancedRequest);
       } else {
         setRequest(initialRequest);
       }
@@ -70,32 +66,26 @@ const ManagerReviewModal = ({ request: initialRequest, isOpen, onClose, onReview
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/requests/${request.id}/review`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ 
-          action, 
-          feedback: feedback.trim() || undefined 
-        })
-      });
+      const result = await apiService.reviewRequest(
+        request.id, 
+        action, 
+        feedback.trim() || undefined
+      );
 
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(action === 'approve' ? 'Work approved!' : 'Work rejected');
-        onReview(data.request);
+      if (result.success) {
+        const successMessage = action === 'approve' ? 'Work approved!' : 'Work rejected';
+        const sourceMessage = result.source === 'supabase' ? ' (Using direct connection)' : '';
+        toast.success(successMessage + sourceMessage);
+        onReview(result.data.request);
         onClose();
         setAction('');
         setFeedback('');
       } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to review request');
+        toast.error(result.error || 'Failed to review request');
       }
     } catch (error) {
       console.error('Review error:', error);
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to review request');
     } finally {
       setLoading(false);
     }

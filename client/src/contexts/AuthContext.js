@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import apiService from '../services/apiService';
 
 const AuthContext = createContext();
 
@@ -35,8 +36,13 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       if (token) {
         try {
-          const response = await axios.get('/api/auth/profile');
-          setUser(response.data.user);
+          const result = await apiService.getProfile();
+          if (result.success) {
+            setUser(result.data.user);
+          } else {
+            console.error('Auth check failed:', result.error);
+            logout();
+          }
         } catch (error) {
           console.error('Auth check failed:', error);
           logout();
@@ -51,37 +57,28 @@ export const AuthProvider = ({ children }) => {
   // In your login function, make sure you're setting all necessary user properties
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
-      const { user, session } = response.data;
+      const result = await apiService.login(email, password);
       
-      // Make sure to set clientId if the user is a client
-      if (user.role === 'client' && user.client_id) {
-        user.clientId = user.client_id; // Add this for backward compatibility
+      if (result.success) {
+        const { user, session } = result.data;
+        
+        // Make sure to set clientId if the user is a client
+        if (user.role === 'client' && user.client_id) {
+          user.clientId = user.client_id; // Add this for backward compatibility
+        }
+        
+        setUser(user);
+        setToken(session.access_token);
+        
+        toast.success(`Login successful! ${result.source === 'supabase' ? '(Using direct connection)' : ''}`);
+        return { success: true };
+      } else {
+        toast.error(result.error || 'Login failed');
+        return { success: false, error: result.error };
       }
-      
-      setUser(user);
-      setToken(session.access_token);
-      localStorage.setItem('token', session.access_token);
-      
-      toast.success('Login successful!');
-      return { success: true };
     } catch (error) {
       console.error('Login error:', error);
-      
-      let message = 'Login failed';
-      
-      if (error.code === 'ERR_NETWORK') {
-        message = 'Network error: Unable to connect to server. Please check your connection.';
-      } else if (error.response?.status === 401) {
-        message = 'Invalid email or password';
-      } else if (error.response?.status === 500) {
-        message = 'Server error. Please try again later.';
-      } else if (error.response?.data?.error) {
-        message = error.response.data.error;
-      } else if (error.message) {
-        message = error.message;
-      }
-      
+      const message = error.message || 'Login failed';
       toast.error(message);
       return { success: false, error: message };
     }
@@ -89,32 +86,49 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      await axios.post('/api/auth/register', userData);
-      toast.success('Registration successful! Please log in.');
-      return { success: true };
+      const result = await apiService.register(userData);
+      
+      if (result.success) {
+        toast.success(`Registration successful! Please log in. ${result.source === 'supabase' ? '(Using direct connection)' : ''}`);
+        return { success: true };
+      } else {
+        toast.error(result.error || 'Registration failed');
+        return { success: false, error: result.error };
+      }
     } catch (error) {
-      const message = error.response?.data?.error || 'Registration failed';
+      const message = error.message || 'Registration failed';
       toast.error(message);
       return { success: false, error: message };
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await apiService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
     setUser(null);
     setToken(null);
-    localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
     toast.success('Logged out successfully');
   };
 
   const updateProfile = async (profileData) => {
     try {
-      const response = await axios.put(`/api/users/${user.id}`, profileData);
-      setUser(response.data.user);
-      toast.success('Profile updated successfully!');
-      return { success: true };
+      const result = await apiService.updateUser(user.id, profileData);
+      
+      if (result.success) {
+        setUser(result.data.user);
+        toast.success(`Profile updated successfully! ${result.source === 'supabase' ? '(Using direct connection)' : ''}`);
+        return { success: true };
+      } else {
+        toast.error(result.error || 'Profile update failed');
+        return { success: false, error: result.error };
+      }
     } catch (error) {
-      const message = error.response?.data?.error || 'Profile update failed';
+      const message = error.message || 'Profile update failed';
       toast.error(message);
       return { success: false, error: message };
     }

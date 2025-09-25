@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -15,8 +14,7 @@ import {
   Eye
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import apiService from '../services/apiService';
 
 const Dashboard = () => {
   const { user, isClient, isManager, isEditor } = useAuth();
@@ -35,21 +33,19 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Please log in again');
+      // Use existing requests route  
+      const result = await apiService.getRequests();
+      
+      if (!result.success) {
+        toast.error('Failed to load dashboard data');
         return;
       }
-
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-
-      // Use existing requests route
-      const response = await axios.get('/api/requests/my-requests', config);
-      const requests = response.data.requests || [];
+      
+      const requests = result.data.requests || [];
+      
+      if (result.source === 'supabase') {
+        console.log('✅ Dashboard data loaded using Supabase fallback');
+      }
       
       // Calculate stats from requests
       const totalRequests = requests.length;
@@ -85,13 +81,7 @@ const Dashboard = () => {
       
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      if (error.response?.status === 401) {
-        toast.error('Please log in again');
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      } else {
-        toast.error('Failed to load dashboard data');
-      }
+      toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }

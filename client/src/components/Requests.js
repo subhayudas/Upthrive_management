@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
 import { Plus, MessageSquare, Upload, Eye, PlusCircle, Clock, CheckCircle, XCircle, AlertCircle, UserPlus, X, FileText, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AssignRequestModal from './AssignRequestModal';
 import ManagerReviewModal from './ManagerReviewModal';
 import ClientReviewModal from './ClientReviewModal';
 import { renderTextWithLinks } from '../utils/textUtils';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import apiService from '../services/apiService';
 
 const Requests = () => {
   const { user, isClient, isManager, isEditor } = useAuth();
@@ -50,8 +48,16 @@ const Requests = () => {
 
   const fetchRequests = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/requests/my-requests`);
-      setRequests(response.data.requests);
+      const result = await apiService.getRequests();
+      if (result.success) {
+        setRequests(result.data.requests);
+        if (result.source === 'supabase') {
+          console.log('✅ Requests loaded using Supabase fallback');
+        }
+      } else {
+        console.error('Error fetching requests:', result.error);
+        toast.error('Failed to load requests');
+      }
     } catch (error) {
       console.error('Error fetching requests:', error);
       toast.error('Failed to load requests');
@@ -79,23 +85,22 @@ const Requests = () => {
         console.log('FormData:', key, value);
       }
 
-      const response = await axios.post(`${API_BASE_URL}/api/requests`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const result = await apiService.createRequest(formDataToSend);
       
-      console.log('Request creation response:', response.data); // Debug log
-      toast.success('Request created successfully!');
-      setShowCreateForm(false);
-      setFormData({
-        message: '',
-        content_type: 'post',
-        requirements: ''
-      });
-      setSelectedFiles([]);
-      fetchRequests();
+      if (result.success) {
+        console.log('Request creation response:', result.data); // Debug log
+        toast.success(`Request created successfully! ${result.source === 'supabase' ? '(Using direct connection)' : ''}`);
+        setShowCreateForm(false);
+        setFormData({
+          message: '',
+          content_type: 'post',
+          requirements: ''
+        });
+        setSelectedFiles([]);
+        fetchRequests();
+      } else {
+        toast.error(result.error || 'Failed to create request');
+      }
     } catch (error) {
       console.error('Error creating request:', error);
       console.error('Error response:', error.response?.data); // More detailed error

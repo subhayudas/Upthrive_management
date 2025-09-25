@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import apiService from '../services/apiService';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -58,20 +58,30 @@ const Calendar = () => {
 
   const fetchClients = async () => {
     try {
-      const response = await axios.get('/api/users/clients');
-      const clientData = response.data.clients;
+      const result = await apiService.getClients();
       
-      const mappedClients = clientData.map(client => ({
-        client_id: client.client_id || client.id,
-        name: client.name,
-        email: client.email,
-        id: client.id
-      }));
+      if (result.success) {
+        const clientData = result.data.clients;
       
-      setClients(mappedClients);
-      
-      if (mappedClients.length > 0) {
-        setSelectedClient(mappedClients[0].client_id);
+        const mappedClients = clientData.map(client => ({
+          client_id: client.client_id || client.id,
+          name: client.name,
+          email: client.email,
+          id: client.id
+        }));
+        
+        setClients(mappedClients);
+        
+        if (mappedClients.length > 0) {
+          setSelectedClient(mappedClients[0].client_id);
+        }
+        
+        if (result.source === 'supabase') {
+          console.log('✅ Calendar clients loaded using Supabase fallback');
+        }
+      } else {
+        console.error('Error fetching clients:', result.error);
+        toast.error('Failed to load clients');
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -144,8 +154,8 @@ const Calendar = () => {
         
         for (const client of clients) {
           try {
-            const response = await axios.get(`/api/cc-list/${client.client_id}`);
-            const ccList = response.data.ccList || [];
+            const result = await apiService.getCCList(client.client_id);
+            const ccList = result.success ? result.data.ccList || [] : [];
             
             const clientEvents = processEvents(ccList, client.name, client.client_id);
             allEvents.push(...clientEvents);
@@ -167,8 +177,8 @@ const Calendar = () => {
         
         if (!clientId) return;
         
-        const response = await axios.get(`/api/cc-list/${clientId}`);
-        const ccList = response.data.ccList || [];
+        const result = await apiService.getCCList(clientId);
+        const ccList = result.success ? result.data.ccList || [] : [];
         
         const clientName = user.role === 'client' ? user.name : clients.find(c => c.client_id === clientId)?.name;
         const calendarEvents = processEvents(ccList, clientName, clientId);
