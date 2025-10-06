@@ -271,6 +271,7 @@ const CCList = () => {
 
   // Add function to handle edit
   const handleEdit = (item) => {
+    console.log('🔧 Edit button clicked for item:', item.id, item.title);
     setEditingItem(item);
     setFormData({
       title: item.title,
@@ -285,11 +286,14 @@ const CCList = () => {
     setSelectedFiles([]); // Clear selected files for edit
     setShowEditForm(true);
     setShowDetailModal(false); // Close detail modal if open
+    console.log('✅ Edit form should now be visible');
   };
 
   // Add function to handle update
   const handleUpdate = async (e) => {
     e.preventDefault();
+    console.log('🔄 Update form submitted for item:', editingItem?.id);
+    console.log('📝 Form data:', formData);
     setShowEditForm(false);
     
     try {
@@ -326,11 +330,13 @@ const CCList = () => {
       const result = await apiService.updateCCItem(clientId, editingItem.id, formDataToSend);
       
       if (result.success) {
+        console.log('✅ CC item updated successfully:', result);
         toast.success(`CC item updated successfully! ${result.source === 'supabase' ? '(Using direct connection)' : ''}`);
         setSelectedFiles([]);
         setEditingItem(null);
         fetchCCList();
       } else {
+        console.error('❌ Failed to update CC item:', result.error);
         toast.error(result.error || 'Failed to update CC item');
       }
     } catch (error) {
@@ -358,17 +364,19 @@ const CCList = () => {
 
   // Add this useEffect for debugging client users
   useEffect(() => {
-    console.log('=== CC LIST CLIENT DEBUG ===');
-    console.log('Current user:', user);
-    console.log('User role:', user?.role);
-    console.log('User client_id:', user?.client_id);
-    console.log('User id:', user?.id);
-    if (user.role === 'client') {
-      console.log('Selected Client:', selectedClient);
-    }
-    console.log('CC List length:', ccList.length);
-    console.log('============================');
-  }, [user, selectedClient, ccList]);
+  console.log('=== CC LIST CLIENT DEBUG ===');
+  console.log('Current user:', user);
+  console.log('User role:', user?.role);
+  console.log('User client_id:', user?.client_id);
+  console.log('User id:', user?.id);
+  if (user.role === 'client') {
+    console.log('Selected Client:', selectedClient);
+  }
+  console.log('CC List length:', ccList.length);
+  console.log('showEditForm:', showEditForm);
+  console.log('editingItem:', editingItem);
+  console.log('============================');
+  }, [user, selectedClient, ccList, showEditForm, editingItem]);
 
   // Add another useEffect to fetch CC list when selectedClient changes
   useEffect(() => {
@@ -670,7 +678,7 @@ const CCList = () => {
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
                   <Edit className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800">Edit Content</h3>
+                <h3 className="text-2xl font-bold text-slate-800">Edit Content - {editingItem.title}</h3>
               </div>
               
               <form onSubmit={handleUpdate} className="space-y-6">
@@ -1048,6 +1056,7 @@ const CCList = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent card click
+                          console.log('🖱️ Edit button clicked from card for item:', item.id);
                           handleEdit(item);
                         }}
                         className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
@@ -1256,6 +1265,7 @@ const CCList = () => {
                   {(isManager || isEditor || user.role === 'client') && (
                     <button
                       onClick={() => {
+                        console.log('🖱️ Edit button clicked from modal for item:', selectedItem?.id);
                         handleEdit(selectedItem);
                       }}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105"
